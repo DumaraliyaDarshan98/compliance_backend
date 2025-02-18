@@ -1,17 +1,26 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { MongooseModule } from '@nestjs/mongoose';
+import { CONFIG } from './utils/keys/keys';
 import { EmployeeModule } from './modules/employee/employee.module';
 import { AuthModule } from './modules/auth/auth.module';
-import { DatabaseConfigModule } from './modules/database-config/database-config.module';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { ResponseFormateInterceptor } from './utils/interceptors/response.interceptor';
 
 @Module({
   imports: [
-    DatabaseConfigModule,
-    AuthModule,
-    EmployeeModule
+    MongooseModule.forRoot(CONFIG.databaseUrl),
+    EmployeeModule,
+    AuthModule
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ResponseFormateInterceptor
+    }
+  ],
 })
 export class AppModule {}

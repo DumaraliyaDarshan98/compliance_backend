@@ -1,22 +1,28 @@
-import { Controller, Get, Post, Body, Param } from '@nestjs/common';
-import { EmployeeService } from './employee.service';
+import { Body, Controller, Delete, Get, Param, Post } from "@nestjs/common";
+import { EmployeeService } from "./employee.service";
+import { APIResponseInterface } from "src/utils/interfaces/response.interface";
 
 @Controller('employee')
 export class EmployeeController {
-    constructor(private readonly usersService: EmployeeService) { }
+    constructor(private readonly employeeService: EmployeeService) { }
 
     @Post()
-    async create(@Body() userData: any): Promise<any> {
-        return await this.usersService.create(userData);
+    async create(@Body() employeeDto: any): Promise<APIResponseInterface<any>> {
+        return await this.employeeService.createEmployee(employeeDto);
     }
 
     @Get()
-    async findAll(): Promise<any[]> {
-        return await this.usersService.findAll();
+    async findAll(): Promise<APIResponseInterface<any>> {
+        return await this.employeeService.getAllEmployee();
     }
 
     @Get(':id')
-    async findOne(@Param('id') id: string): Promise<any> {
-        return await this.usersService.findOne(id);
+    async findById(@Param('id') id: string) {
+        return this.employeeService.findById(id);
+    }
+
+    @Delete(':id')
+    async deleteById(@Param('id') id: string) {
+        return this.employeeService.deleteById(id);
     }
 }

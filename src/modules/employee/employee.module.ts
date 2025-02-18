@@ -1,12 +1,13 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { EmployeeEntity } from '../database-config/entity/employee.entity';
 import { EmployeeService } from './employee.service';
 import { EmployeeController } from './employee.controller';
+import { Employee, EmployeeSchema } from './schema/employee.schema';
+import { MongooseModule } from '@nestjs/mongoose';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([EmployeeEntity])],
+    imports: [MongooseModule.forFeature([{ name: Employee.name, schema: EmployeeSchema }])],
     providers: [EmployeeService],
     controllers: [EmployeeController],
+    exports: [EmployeeService]
 })
 export class EmployeeModule { }

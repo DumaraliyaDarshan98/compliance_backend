@@ -1,32 +1,41 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository} from 'typeorm';
-import { ObjectId } from 'mongodb';
-import { EmployeeEntity } from '../database-config/entity/employee.entity';
+import { Injectable, NotFoundException } from "@nestjs/common";
+import { Employee, EmployeeDocument } from "./schema/employee.schema";
+import { InjectModel } from "@nestjs/mongoose";
+import { Model } from "mongoose";
+import { APIResponseInterface } from "src/utils/interfaces/response.interface";
 
 @Injectable()
 export class EmployeeService {
-    constructor(
-        @InjectRepository(EmployeeEntity)
-        private readonly userRepository: Repository<EmployeeEntity>,
-    ) { }
+    constructor(@InjectModel(Employee.name) private readonly employeeModel: Model<EmployeeDocument>) { }
 
-    async create(userData: any): Promise<any> {
-        const user = this.userRepository.create(userData);
-        return await this.userRepository.save(user);
+    async createEmployee(employeeDto: any): Promise<APIResponseInterface<any>> {
+        const employee = new this.employeeModel(employeeDto);
+        const data = employee.save();
+        return {
+            data
+        }
     }
 
-    async findAll(): Promise<any[]> {
-        return await this.userRepository.find();
+    async getAllEmployee(): Promise<APIResponseInterface<any>> {
+        const employeeList = await this.employeeModel.find().exec();
+        return {
+            data: employeeList
+        }
     }
 
-    async findOne(id: any): Promise<any> {
-        const user = await this.userRepository.findOne({ where : { email: "test@gmail.com" } });
+    async findById(id: string): Promise<APIResponseInterface<Employee>> {
+        const employee = await this.employeeModel.findById(id).exec();
+        if (!employee) {
+            throw new NotFoundException(`Employee with ID ${id} not found`);
+        }
+        return { data: employee };
+    }
 
-        // const objectId = id instanceof ObjectId ? id : new ObjectId(id);
-
-        console.log("67b3700c40b8a8e656071efa", user)
-        console.log("ID Type:", typeof id, "Value:", id);
-        return await this.userRepository.findOneBy({ id: new ObjectId(id)  });
+    async deleteById(id: string): Promise<APIResponseInterface<any>> {
+        const result = await this.employeeModel.findByIdAndDelete(id).exec();
+        if (!result) {
+            throw new NotFoundException(`Employee with ID ${id} not found`);
+        }
+        return { message: `Employee with ID ${id} deleted successfully` };
     }
 }
