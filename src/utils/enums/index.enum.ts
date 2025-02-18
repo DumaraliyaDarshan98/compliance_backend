@@ -4,7 +4,7 @@ export enum Gender {
     OTHER = 'Other',
 }
 
-export enum Roles {
+export enum ROLES {
     ADMIN = 'ADMIN',
     EMPLOYEE = 'EMPLOYEE',
     LINE_MANAGER = 'LINEMANAGER',

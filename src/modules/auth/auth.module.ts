@@ -5,14 +5,17 @@ import { JwtModule } from '@nestjs/jwt';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
+import { Employee, EmployeeSchema } from '../employee/schema/employee.schema';
+import { MongooseModule } from '@nestjs/mongoose';
 @Module({
     imports: [
         EmployeeModule,
         PassportModule,
         JwtModule.register({
             secret: 'test@123', // Use env variable for security
-            signOptions: { expiresIn: '1h' },
+            signOptions: { expiresIn: '23h' },
         }),
+        MongooseModule.forFeature([{ name: Employee.name, schema: EmployeeSchema }]),
     ],
     controllers: [AuthController],
     providers: [AuthService, JwtStrategy],

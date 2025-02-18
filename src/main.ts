@@ -11,6 +11,6 @@ async function bootstrap() {
     .then(() => console.log('✅ MongoDB connected successfully'))
     .catch((err) => console.error('❌ MongoDB connection failed:', err));
 
-  await app.listen(3000);
+  await app.listen(3006);
 }
 bootstrap();

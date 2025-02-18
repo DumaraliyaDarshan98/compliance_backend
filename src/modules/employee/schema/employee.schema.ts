@@ -1,8 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 import { ObjectId } from 'mongodb';
-import { Gender, Roles } from 'src/utils/enums/index.enum';
-import * as bcrypt from 'bcrypt';
+import { Gender, ROLES } from 'src/utils/enums/index.enum';
 
 export type EmployeeDocument = Employee & Document;
 
@@ -47,20 +46,18 @@ export class Employee {
     @Prop({ required: true })
     city: string;
 
-    @Prop({ required: true, enum: Roles })
-    role: Roles;
+    @Prop({ required: true, enum: ROLES })
+    role: ROLES;
 
     @Prop({ required: true })
     password: string;
+
+    @Prop()
+    resetPasswordToken?: string;
+
+    @Prop()
+    resetPasswordExpires?: Date;
 }
 
 export const EmployeeSchema = SchemaFactory.createForClass(Employee);
-
-// Middleware to hash password before saving
-EmployeeSchema.pre<EmployeeDocument>('save', async function (next) {
-    if (!this.isModified('password')) return next();
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
-    next();
-});
 
