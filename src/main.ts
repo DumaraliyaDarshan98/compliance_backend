@@ -5,7 +5,7 @@ import mongoose from 'mongoose';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-
+  app.enableCors();
    mongoose
     .connect(CONFIG.databaseUrl)
     .then(() => console.log('✅ MongoDB connected successfully'))
