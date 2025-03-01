@@ -6,12 +6,14 @@ import { APIResponseInterface } from "src/utils/interfaces/response.interface";
 import { Employee, EmployeeDocument } from "../employee/schema/employee.schema";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
+import { MailerService } from "src/utils/mailer/mailer.service";
 
 @Injectable()
 export class AuthService {
     constructor(
         private readonly employeeService: EmployeeService,
         private readonly jwtService: JwtService,
+        private readonly mailService: MailerService,
         @InjectModel(Employee.name) private readonly employeeModel: Model<EmployeeDocument>,
     ) { }
 
@@ -43,7 +45,6 @@ export class AuthService {
     async requestPasswordReset(email: string): Promise<APIResponseInterface<any>> {
         try {
             const employee = await this.employeeModel.findOne({ email });
-            console.log("resetToken", employee);
 
             if (!employee) {
                 throw new NotFoundException('employee not found');
@@ -53,12 +54,15 @@ export class AuthService {
             const payload = { id: employee?._id, email: employee.email, role: employee.role };
 
             const resetToken = this.jwtService.sign(payload);
-            console.log("resetToken", resetToken);
+
+            // Mail send to user
+            const resetUrl = `http://localhost:4200/reset?token=${resetToken}`;
+            const emailContent : any = `<p>Click <a href="${resetUrl}">here</a> to reset your password.</p>`;
+            await this.mailService.sendResetPasswordEmail(employee.email, emailContent);
+
             employee.resetPasswordToken = resetToken;
             employee.resetPasswordExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 min expiry
             
-            console.log("employee", employee);
-
             await employee.save();
 
             return { message: 'Password reset link sent to email', data : { token: resetToken } };
