@@ -86,4 +86,17 @@ export class PolicyService {
             throw new InternalServerErrorException("Failed to deleteById");
         }
     }
+
+    async findById(id: string): Promise<APIResponseInterface<Policy>> {
+        try {
+            const policyDetails = await this.policyModel.findById(id).exec();
+            if (!policyDetails) {
+                throw new NotFoundException(`Policy with ID ${id} not found`);
+            }
+            return { data: policyDetails };
+        } catch (error) {
+            console.error("Error findById:", error);
+            throw new InternalServerErrorException("Failed to findById");
+        }
+    }
 }

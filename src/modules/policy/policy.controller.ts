@@ -24,4 +24,10 @@ export class PolicyController {
     async deleteById(@Param('id') id: string) {
         return this.policyService.deleteById(id);
     }
+
+    @UseGuards(JwtAuthGuard)
+    @Get(':id')
+    async findById(@Param('id') id: string) {
+        return this.policyService.findById(id);
+    }
 }
