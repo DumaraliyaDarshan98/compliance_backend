@@ -1,13 +1,15 @@
-import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
+import { BadRequestException, forwardRef, Inject, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
 import { Employee, EmployeeDocument } from "./schema/employee.schema";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { APIResponseInterface } from "src/utils/interfaces/response.interface";
 import * as bcrypt from 'bcrypt';
+import { MailerService } from "src/utils/mailer/mailer.service";
 @Injectable()
 export class EmployeeService {
     constructor(
         @InjectModel(Employee.name) private readonly employeeModel: Model<EmployeeDocument>,
+        private readonly mailService: MailerService
     ) { }
 
     async createEmployee(employeeDto: any): Promise<APIResponseInterface<any>> {
@@ -29,6 +31,12 @@ export class EmployeeService {
 
         try {
             const data = await employee.save();
+
+            // Mail send to user
+            const resetUrl = `http://localhost:4200/reset?token=${data.email}`;
+            const emailContent: any = `<p>Click <a href="${resetUrl}">here</a> to set your new password.</p>`;
+            await this.mailService.sendResetPasswordEmail(data.email, emailContent);
+
             return { data };
         } catch (error) {
             console.error("Error saving employee:", error);
@@ -88,6 +96,4 @@ export class EmployeeService {
             throw new InternalServerErrorException("Failed to findByEmail");
         }
     }
-
-    
 }

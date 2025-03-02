@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { EmployeeModule } from '../employee/employee.module';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
@@ -20,6 +20,6 @@ import { MailerService } from 'src/utils/mailer/mailer.service';
     ],
     controllers: [AuthController],
     providers: [AuthService, JwtStrategy, MailerService],
-    exports: [AuthService],
+    exports: [AuthService, JwtStrategy],
 })
-export class AuthModule {}
+export class AuthModule { }

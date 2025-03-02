@@ -13,12 +13,10 @@ export class EmployeeController {
     async create(@Body() employeeDto: any): Promise<APIResponseInterface<any>> {
         return await this.employeeService.createEmployee(employeeDto);
     }
-
     @Get()
     async findAll(): Promise<APIResponseInterface<any>> {
         return await this.employeeService.getAllEmployee();
     }
-
     @UseGuards(JwtAuthGuard)
     @Get(':id')
     async findById(@Param('id') id: string) {
