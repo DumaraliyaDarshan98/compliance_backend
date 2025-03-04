@@ -9,6 +9,7 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
 import { ResponseFormateInterceptor } from './utils/interceptors/response.interceptor';
 import { PolicyModule } from './modules/policy/policy.module';
 import { SubPolicyModule } from './modules/sub-policy/sub-policy.module';
+import { PolicySettingModule } from './modules/policy-setting/policy-setting.module';
 
 @Module({
   imports: [
@@ -16,7 +17,7 @@ import { SubPolicyModule } from './modules/sub-policy/sub-policy.module';
     EmployeeModule,
     AuthModule,
     PolicyModule,
-    SubPolicyModule
+    PolicySettingModule
   ],
   controllers: [AppController],
   providers: [
