@@ -10,6 +10,7 @@ import { ResponseFormateInterceptor } from './utils/interceptors/response.interc
 import { PolicyModule } from './modules/policy/policy.module';
 import { SubPolicyModule } from './modules/sub-policy/sub-policy.module';
 import { PolicySettingModule } from './modules/policy-setting/policy-setting.module';
+import { QuestionModule } from './modules/question/question.module';
 
 @Module({
   imports: [
@@ -17,7 +18,8 @@ import { PolicySettingModule } from './modules/policy-setting/policy-setting.mod
     EmployeeModule,
     AuthModule,
     PolicyModule,
-    PolicySettingModule
+    PolicySettingModule,
+    QuestionModule
   ],
   controllers: [AppController],
   providers: [

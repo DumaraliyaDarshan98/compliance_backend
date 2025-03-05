@@ -10,6 +10,6 @@ import { SubPolicy, SubPolicySchema } from './schema/sub-policy.schema';
     ],
     providers: [SubPolicyService],
     controllers: [SubPolicyController],
-    exports: [SubPolicyService]
+    exports: [SubPolicyService, MongooseModule]
 })
 export class SubPolicyModule {}

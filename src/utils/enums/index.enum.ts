@@ -14,3 +14,14 @@ export enum POLICY_TYPE {
     FOR_INFORMATION = 'For Information',
     FOR_ACTION = 'For Action'
 }
+
+export enum QUESTION_TYPE {
+    CHECKBOX = '1',
+    BOOLEAN = '2',
+    MCQ = '3',
+}
+
+export enum USER_GROUP {
+    EMPLOYEE = '1',
+    LINE_MANAGER = '2',
+}
