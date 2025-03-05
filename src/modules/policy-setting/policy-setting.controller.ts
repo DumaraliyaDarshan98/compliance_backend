@@ -11,14 +11,9 @@ export class PolicySettingController {
         private readonly policySettingService: PolicySettingService
     ) { }
 
-    @Post('/create')
-    async createPolicySetting(@Body() policySettingPayload: any): Promise<APIResponseInterface<any>> {
-        return await this.policySettingService.createPolicySetting(policySettingPayload);
-    }
-
-    @Post('/update')
-    async updatePolicySetting(@Body() policySettingPayload: any): Promise<APIResponseInterface<any>> {
-        return await this.policySettingService.updatePolicySetting(policySettingPayload);
+    @Post('/upsert')
+    async upsertPolicySetting(@Body() policySettingPayload: any): Promise<APIResponseInterface<any>> {
+        return await this.policySettingService.upsertPolicySetting(policySettingPayload);
     }
 
     @UseGuards(JwtAuthGuard)
