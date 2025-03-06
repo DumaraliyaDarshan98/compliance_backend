@@ -23,6 +23,9 @@ export class Question {
     @Prop({ required: true, enum: QUESTION_TYPE })
     questionType: string;
 
+    @Prop({ required: true })
+    answer: string;
+
     @Prop({ required: true, type: Number, enum: [0, 1], default: 1 })
     isActive: 0 | 1;
 }

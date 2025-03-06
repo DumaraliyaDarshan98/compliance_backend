@@ -12,6 +12,7 @@ import { SubPolicy, SubPolicyDocument } from 'src/modules/sub-policy/schema/sub-
 import { Question, QuestionDocument } from "./schema/question.schema";
 import { Option, OptionDocument } from 'src/modules/option/schema/option.schema';
 import * as mongoose from 'mongoose';
+import { QUESTION_TYPE, USER_GROUP } from 'src/utils/enums/index.enum';
 
 @Injectable()
 export class QuestionService {
@@ -21,6 +22,7 @@ export class QuestionService {
         @InjectModel(Question.name) private readonly questionModel: Model<QuestionDocument>,
     ) {}
 
+    // Create a question with options
     async createQuestion(payload: any): Promise<APIResponseInterface<any>> {
         try {
             // Validate required fields
@@ -40,7 +42,6 @@ export class QuestionService {
             }
 
             const subPolicyExists = await this.subPolicyModel.findById(payload?.subPolicyId).exec();
-
             if (!subPolicyExists) {
                 return {
                     code: HttpStatus.NOT_FOUND,
@@ -48,12 +49,15 @@ export class QuestionService {
                 };
             }
 
+            // Save questions and options
             for (const question of payload.questions) {
                 const questionData = {
                     questionText: question.questionText,
                     questionType: question.questionType,
                     subPolicyId: payload.subPolicyId,
                     userGroup: payload.userGroup,
+                    answer: question.answer,
+                    isActive: (question?.isActive !== undefined && question?.isActive !== null) ? question.isActive : 1,
                 };
 
                 const createdQuestion = new this.questionModel(questionData);
@@ -63,16 +67,14 @@ export class QuestionService {
 
                 if (question.options) {
                     let options = question.options;
-                    let optionId = 1;
 
-                    for (let i = 0; i < options.length; i++) {
+                    for (const option of options) {
                         const optionData = {
                             questionId: questionId,
-                            optionText: options[i],
-                            optionId: optionId,
+                            optionText: option.value,
+                            optionIndex: option.index,
                         };
 
-                        optionId++;
                         const createOption = new this.optionModel(optionData);
                         await createOption.save();
                     }
@@ -92,8 +94,10 @@ export class QuestionService {
         }
     }
 
+    // Get all questions based on filter criteria
     async getAllquestion(payload: any): Promise<APIResponseInterface<any>> {
         try {
+            // Validate required fields
             const requiredFields = [
                 { field: "subPolicyId", message: "Sub Policy Id is required" },
                 { field: "userGroup", message: "User Group is required" },
@@ -111,10 +115,11 @@ export class QuestionService {
             const subPolicyId = new mongoose.Types.ObjectId(payload.subPolicyId);
             const userGroup = payload.userGroup;
 
-            // Optional: Add questionText if it's not empty
+            // Match query for filtering questions
             const matchQuery: any = {
                 subPolicyId: subPolicyId,
                 userGroup: userGroup,
+                isActive: 1,
             };
 
             if (payload?.questionText && payload.questionText.trim() !== "") {
@@ -123,14 +128,30 @@ export class QuestionService {
 
             const result = await this.questionModel.aggregate([
                 {
-                    $match: matchQuery,
+                    $match: matchQuery, // Match questions based on filter criteria
                 },
                 {
                     $project: {
+                        _id: 1,
                         subPolicyId: 1,
                         userGroup: 1,
                         questionText: 1,
                         questionType: 1,
+                        answer: 1,
+                    },
+                },
+                {
+                    $addFields: {
+                        questionTypeText: {
+                            $switch: {
+                                branches: [
+                                    { case: { $eq: ['$questionType', QUESTION_TYPE.CHECKBOX] }, then: 'Checkbox' },
+                                    { case: { $eq: ['$questionType', QUESTION_TYPE.BOOLEAN] }, then: 'Boolean' },
+                                    { case: { $eq: ['$questionType', QUESTION_TYPE.MCQ] }, then: 'MCQ' },
+                                ],
+                                default: 'Unknown',  // Fallback value if no match
+                            },
+                        },
                     },
                 },
                 {
@@ -139,26 +160,6 @@ export class QuestionService {
                         localField: '_id',
                         foreignField: 'questionId',
                         as: 'optionsDetails',
-                    },
-                },
-                {
-                    $unwind: {
-                        path: '$optionsDetails',
-                        preserveNullAndEmptyArrays: true,
-                    },
-                },
-                {
-                    $group: {
-                        _id: '$subPolicyId',
-                        questionText: { $first: '$questionText' },
-                        questionType: { $first: '$questionType' },
-                        userGroup: { $first: '$userGroup' },
-                        optionsDetails: { $push: '$optionsDetails' },
-                    },
-                },
-                {
-                    $sort: {
-                        'optionsDetails.optionId': 1,
                     },
                 },
             ]);
@@ -185,13 +186,14 @@ export class QuestionService {
         }
     }
 
+    // Delete a question by ID
     async deleteById(payload: any): Promise<APIResponseInterface<any>> {
         try {
             if (!payload?.id) {
                 return {
                     code: HttpStatus.BAD_REQUEST,
                     message: "Question Id is required",
-                }
+                };
             }
 
             const result = await this.questionModel.findByIdAndDelete(payload.id).exec();
@@ -199,7 +201,7 @@ export class QuestionService {
                 return {
                     code: HttpStatus.NOT_FOUND,
                     message: `Question with ID ${payload?.id} not found`,
-                }
+                };
             }
 
             await this.optionModel.deleteMany({ questionId: payload.id });
@@ -213,18 +215,21 @@ export class QuestionService {
             return {
                 code: HttpStatus.INTERNAL_SERVER_ERROR,
                 message: error.message,
-            }
+            };
         }
     }
 
+    // Update question details
     async updateQuestion(payload: any): Promise<APIResponseInterface<any>> {
         try {
             const requiredFields = [
                 { field: "id", message: "Question Id is required" },
                 { field: "questionText", message: "Question Text is required" },
                 { field: "questionType", message: "Question Type is required" },
-                { field: "options", message: "Options is required" },
+                { field: "options", message: "Options are required" },
                 { field: "userGroup", message: "User Group is required" },
+                { field: "isActive", message: "Status is required" },
+                { field: "answer", message: "Answer is required" },
             ];
 
             for (const { field, message } of requiredFields) {
@@ -245,26 +250,28 @@ export class QuestionService {
                 };
             }
 
-            existingQuestion.questionText = payload.questionText || existingQuestion.questionText;
-            existingQuestion.questionType = payload.questionType || existingQuestion.questionType;
-            existingQuestion.userGroup = payload.userGroup || existingQuestion.userGroup;
+            // Update question
+            existingQuestion.questionText = payload.questionText;
+            existingQuestion.questionType = payload.questionType;
+            existingQuestion.userGroup = payload.userGroup;
+            existingQuestion.answer = payload.answer;
+            existingQuestion.isActive = payload?.isActive,
             await existingQuestion.save();
 
+            // Delete old options and add new ones
             await this.optionModel.deleteMany({ questionId: payload.id });
 
             if (payload.options && Array.isArray(payload.options)) {
-                let optionId = 1;
 
-                for (const optionText of payload.options) {
+                for (const option of payload.options) {
                     const optionData = {
                         questionId: payload.id,
-                        optionText: optionText,
-                        optionId: optionId,
+                        optionText: option.value,
+                        optionIndex: option.index,
                     };
 
                     const createOption = new this.optionModel(optionData);
                     await createOption.save();
-                    optionId++;
                 }
             }
 
@@ -281,6 +288,7 @@ export class QuestionService {
         }
     }
 
+    // Get question details by ID
     async questionDetail(payload: any): Promise<APIResponseInterface<any>> {
         try {
             const requiredFields = [
@@ -299,17 +307,29 @@ export class QuestionService {
             const id = new mongoose.Types.ObjectId(payload.id);
 
             const result = await this.questionModel.aggregate([
-                {
-                    $match: {
-                        _id: id,
-                    },
-                },
+                { $match: { _id: id } },
                 {
                     $project: {
+                        _id: 1,
                         subPolicyId: 1,
                         userGroup: 1,
                         questionText: 1,
                         questionType: 1,
+                        answer: 1,
+                    },
+                },
+                {
+                    $addFields: {
+                        questionTypeText: {
+                            $switch: {
+                                branches: [
+                                    { case: { $eq: ['$questionType', QUESTION_TYPE.CHECKBOX] }, then: 'Checkbox' },
+                                    { case: { $eq: ['$questionType', QUESTION_TYPE.BOOLEAN] }, then: 'Boolean' },
+                                    { case: { $eq: ['$questionType', QUESTION_TYPE.MCQ] }, then: 'MCQ' },
+                                ],
+                                default: 'Unknown',  // Fallback value if no match
+                            },
+                        },
                     },
                 },
                 {
@@ -318,26 +338,6 @@ export class QuestionService {
                         localField: '_id',
                         foreignField: 'questionId',
                         as: 'optionsDetails',
-                    },
-                },
-                {
-                    $unwind: {
-                        path: '$optionsDetails',
-                        preserveNullAndEmptyArrays: true,
-                    },
-                },
-                {
-                    $group: {
-                        _id: '$subPolicyId',
-                        questionText: { $first: '$questionText' },
-                        questionType: { $first: '$questionType' },
-                        userGroup: { $first: '$userGroup' },
-                        optionsDetails: { $push: '$optionsDetails' },
-                    },
-                },
-                {
-                    $sort: {
-                        'optionsDetails.optionId': 1,
                     },
                 },
             ]);

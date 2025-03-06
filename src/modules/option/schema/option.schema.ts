@@ -15,7 +15,7 @@ export class Option {
     questionId: mongoose.Schema.Types.ObjectId;  // Foreign Key-like reference
 
     @Prop({ required: true, type: Number })
-    optionId: number;
+    optionIndex: number;
 
     @Prop({ required: true })
     optionText: string;
