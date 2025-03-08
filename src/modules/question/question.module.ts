@@ -14,6 +14,6 @@ import { SubPolicyModule } from 'src/modules/sub-policy/sub-policy.module'; // I
     ],
     providers: [QuestionService],
     controllers: [QuestionController],
-    exports: [QuestionService]
+    exports: [QuestionService, MongooseModule]
 })
 export class QuestionModule {}

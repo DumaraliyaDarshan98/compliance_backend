@@ -6,7 +6,7 @@ import {
     NotFoundException,
 } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model } from "mongoose";
+import { Model, PipelineStage } from "mongoose";
 import { APIResponseInterface } from "src/utils/interfaces/response.interface";
 import { SubPolicy, SubPolicyDocument } from 'src/modules/sub-policy/schema/sub-policy.schema';
 import { Question, QuestionDocument } from "./schema/question.schema";
@@ -119,14 +119,18 @@ export class QuestionService {
             const matchQuery: any = {
                 subPolicyId: subPolicyId,
                 userGroup: userGroup,
-                isActive: 1,
             };
+
+            // If isActive is provided (true or false), add it to the filter
+            if (payload?.isActive !== undefined) {
+                matchQuery.isActive = payload?.isActive;
+            }
 
             if (payload?.questionText && payload.questionText.trim() !== "") {
                 matchQuery.questionText = { $regex: payload.questionText, $options: 'i' };
             }
-
-            const result = await this.questionModel.aggregate([
+            
+            const pipeline: PipelineStage[] = [
                 {
                     $match: matchQuery, // Match questions based on filter criteria
                 },
@@ -161,10 +165,33 @@ export class QuestionService {
                         foreignField: 'questionId',
                         as: 'optionsDetails',
                     },
-                },
-            ]);
+                }
+            ];
 
-            if (result.length === 0) {
+
+            var selectedQuestions = await this.questionModel.aggregate(pipeline);
+
+            if (payload?.size !== undefined) {
+
+                var size = payload?.size;
+                const allQuestions = selectedQuestions;
+
+                const randomNumber = Math.floor(Math.random() * size) + 1;  // 1 to 5 random documents
+
+                // Step 3: Generate random indices
+                const randomIndices = [];
+                while (randomIndices.length < randomNumber) {
+                  const randIndex = Math.floor(Math.random() * allQuestions.length);
+                  if (!randomIndices.includes(randIndex)) {
+                    randomIndices.push(randIndex);
+                  }
+                }
+
+                // Step 4: Select documents based on random indices
+                selectedQuestions = randomIndices.map(index => allQuestions[index]);
+            }
+
+            if (selectedQuestions.length === 0) {
                 return {
                     code: HttpStatus.NOT_FOUND,
                     message: 'Not Found',
@@ -174,7 +201,7 @@ export class QuestionService {
             return {
                 code: HttpStatus.CREATED,
                 message: 'Question List',
-                data: result,
+                data: selectedQuestions,
             };
 
         } catch (error) {
