@@ -11,11 +11,17 @@ export class PolicySetting {
     @Prop({ type: ObjectId })
     id: ObjectId;
 
-    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Policy', required: true })
-    policyId: mongoose.Schema.Types.ObjectId; 
+    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'SubPolicy', required: true })
+    subPolicyId: mongoose.Schema.Types.ObjectId; 
 
     @Prop({ required: true, type: Date })
-    examTimeLimit: Date; // Representing the exact date and time the exam ends
+    publishDate: Date;
+
+    @Prop({ required: true, type: Number, enum: [0, 1], default: 1 })
+    skipWeekDays: 0 | 1;
+
+    @Prop({ required: true, type: Date })
+    examTimeLimit: Date;
 
     @Prop({ required: true, type: Number })
     maximumRettemptDaysLeft: number;

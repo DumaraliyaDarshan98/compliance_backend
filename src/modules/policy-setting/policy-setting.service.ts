@@ -3,12 +3,12 @@ import { PolicySetting, PolicySettingDocument } from "./schema/policy-setting.sc
 import { InjectModel } from "@nestjs/mongoose";
 import { Model, Types } from "mongoose";
 import { APIResponseInterface } from "src/utils/interfaces/response.interface";
-import { Policy, PolicyDocument } from 'src/modules/policy/schema/policy.schema';
+import { SubPolicy, SubPolicyDocument } from 'src/modules/sub-policy/schema/sub-policy.schema';
 
 @Injectable()
 export class PolicySettingService {
     constructor(
-        @InjectModel(Policy.name) private readonly policyModel: Model<PolicyDocument>,
+        @InjectModel(SubPolicy.name) private readonly subPolicyModel: Model<SubPolicyDocument>,
         @InjectModel(PolicySetting.name) private readonly policySettingModel: Model<PolicySettingDocument>, // Injecting the Mongoose model
     ) {}
 
@@ -16,7 +16,7 @@ export class PolicySettingService {
         try {
             // Validate required fields
             const requiredFields = [
-                { field: "policyId", message: "Policy Id is required" },
+                { field: "subPolicyId", message: "Sub Policy Id is required" },
             ];
 
             for (const { field, message } of requiredFields) {
@@ -29,23 +29,25 @@ export class PolicySettingService {
             }
 
             // Check if the policy exists
-            const policyId = new Types.ObjectId(payload.policyId);
-            const policyExists = await this.policyModel.findById(policyId).exec();
+            const subPolicyId = new Types.ObjectId(payload.subPolicyId);
+            const policyExists = await this.subPolicyModel.findById(subPolicyId).exec();
 
             if (!policyExists) {
                 return {
                     code: HttpStatus.NOT_FOUND,
-                    message: 'Policy not found',
+                    message: 'Sub Policy not found',
                 };
             }
 
             // Check if a policy setting already exists for the given policyId
-            const existingPolicy = await this.policySettingModel.findOne({ policyId: policyId }).exec();
+            const existingPolicy = await this.policySettingModel.findOne({ subPolicyId: subPolicyId }).exec();
 
             let savedPolicySetting;
 
             if (existingPolicy) {
                 // Update existing policy settings
+                existingPolicy.publishDate = payload.publishDate || existingPolicy.publishDate;
+                existingPolicy.skipWeekDays = payload.skipWeekDays || existingPolicy.skipWeekDays;
                 existingPolicy.examTimeLimit = payload.examTimeLimit || existingPolicy.examTimeLimit;
                 existingPolicy.maximumRettemptDaysLeft = payload.maximumRettemptDaysLeft || existingPolicy.maximumRettemptDaysLeft;
                 existingPolicy.maximumAttempt = payload.maximumAttempt || existingPolicy.maximumAttempt;
@@ -59,6 +61,8 @@ export class PolicySettingService {
 
                 // Validate required fields
                 const requiredFields = [
+                    { field: "publishDate", message: "Publish Date is required" },
+                    { field: "skipWeekDays", message: "Skip WeekDays is required" },
                     { field: "examTimeLimit", message: "Exam Time Limit is required" },
                     { field: "maximumRettemptDaysLeft", message: "Max Re-Attempt days left is required" },
                     { field: "maximumAttempt", message: "Max Attempt is required" },
@@ -98,26 +102,26 @@ export class PolicySettingService {
 
     async findByPolicyId(payload: any): Promise<APIResponseInterface<PolicySetting>> {
         try {
-            // Validate if the policyId exists in the payload
-            if (!payload?.policyId) {
+            // Validate if the subPolicyId exists in the payload
+            if (!payload?.subPolicyId) {
                 return {
                     code: HttpStatus.BAD_REQUEST,
-                    message: "Policy Id is required",
+                    message: "Sub Policy Id is required",
                 };
             }
 
             // Check if the policy exists
-            const policyExists = await this.policyModel.findById(payload?.policyId).exec();
+            const subPolicyExists = await this.subPolicyModel.findById(payload?.subPolicyId).exec();
 
-            if (!policyExists) {
+            if (!subPolicyExists) {
                 return {
                     code: HttpStatus.NOT_FOUND,
-                    message: 'Policy not found',
+                    message: 'Sub Policy not found',
                 };
             }
 
-            // Find the policy setting by policyId
-            const policySettingDetail = await this.policySettingModel.findOne({ policyId: payload?.policyId }).exec();
+            // Find the policy setting by subPolicyId
+            const policySettingDetail = await this.policySettingModel.findOne({ subPolicyId: payload?.subPolicyId }).exec();
             
             if (!policySettingDetail) {
                 return {
