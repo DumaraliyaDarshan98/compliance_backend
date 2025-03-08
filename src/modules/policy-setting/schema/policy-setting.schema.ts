@@ -40,6 +40,9 @@ export class PolicySetting {
 
     @Prop({ required: true, type: Number })
     timeLimit: number; // Time limit in minutes
+
+    @Prop({ required: true, type: Number })
+    PassingScore: number; // Time limit in minutes
 }
 
 export const PolicySettingSchema = SchemaFactory.createForClass(PolicySetting);

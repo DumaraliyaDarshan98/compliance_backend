@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { PolicySettingService } from './policy-setting.service';
 import { PolicySettingController } from './policy-setting.controller';
@@ -8,7 +8,7 @@ import { SubPolicyModule } from 'src/modules/sub-policy/sub-policy.module'; // I
 @Module({
     imports: [
         MongooseModule.forFeature([{ name: PolicySetting.name, schema: PolicySettingSchema }]),
-        SubPolicyModule
+        forwardRef(() => SubPolicyModule), 
     ],
     providers: [PolicySettingService],
     controllers: [PolicySettingController],
