@@ -60,13 +60,6 @@ export class PolicyService {
                 }
             }
 
-            if (!payload?.isActive) {
-                return {
-                    code: HttpStatus.BAD_REQUEST,
-                    message: "Policy active status is required",
-                }
-            }
-
             const existingDetails = await this.policyModel.findOne({ name: payload?.name, version: payload?.version }).exec();
 
             if (existingDetails) {
