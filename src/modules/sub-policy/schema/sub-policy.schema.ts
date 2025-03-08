@@ -2,6 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 import { ObjectId } from 'mongodb';
 import { POLICY_TYPE } from 'src/utils/enums/index.enum';
+import * as mongoose from 'mongoose';
 
 export type SubPolicyDocument = SubPolicy & Document;
 
@@ -10,8 +11,8 @@ export class SubPolicy {
     @Prop({ type: ObjectId })
     id: ObjectId;
 
-    @Prop({ type: ObjectId })
-    policyId: ObjectId;
+    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Policy', required: true })
+    policyId: mongoose.Schema.Types.ObjectId; 
 
     @Prop({ required: true })
     name: string;
