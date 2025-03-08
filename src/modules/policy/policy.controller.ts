@@ -10,9 +10,9 @@ export class PolicyController {
         private readonly policyService: PolicyService
     ) { }
 
-    @Get()
-    async getAllPolicy(): Promise<APIResponseInterface<any>> {
-        return await this.policyService.getAllPolicy();
+    @Post('list')
+    async getAllPolicy(@Body() policyPayload: any): Promise<APIResponseInterface<any>> {
+        return await this.policyService.getAllPolicy(policyPayload);
     }
 
     @Post()

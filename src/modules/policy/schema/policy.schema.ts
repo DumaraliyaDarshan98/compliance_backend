@@ -27,6 +27,9 @@ export class Policy {
 
     @Prop({ required: true })
     status: string;
+
+    @Prop({ required: true, type: Number, enum: [0, 1], default: 1 })
+    isActive: 0 | 1;
 }
 
 export const PolicySchema = SchemaFactory.createForClass(Policy);

@@ -10,9 +10,17 @@ export class PolicyService {
         @InjectModel(Policy.name) private readonly policyModel: Model<PolicyDocument>,
     ) { }
 
-    async getAllPolicy(): Promise<APIResponseInterface<any>> {
+    async getAllPolicy(payload): Promise<APIResponseInterface<any>> {
         try {
-            const policyList = await this.policyModel.find().exec();
+           // Create a dynamic filter object
+            const filter: Record<string, any> = {};
+
+            // If isActive is provided (true or false), add it to the filter
+            if (payload?.isActive !== undefined) {
+                filter.isActive = payload?.isActive;
+            }
+
+            const policyList = await this.policyModel.find(filter).exec();
             return {
                 data: policyList
             }
@@ -49,6 +57,13 @@ export class PolicyService {
                 return {
                     code: HttpStatus.BAD_REQUEST,
                     message: "Policy policy type is required",
+                }
+            }
+
+            if (!payload?.isActive) {
+                return {
+                    code: HttpStatus.BAD_REQUEST,
+                    message: "Policy active status is required",
                 }
             }
 
