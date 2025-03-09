@@ -14,14 +14,14 @@ export class ResultController {
 
     @Post('/list')
     @UseGuards(JwtAuthGuard) 
-    async getList (@Body() resultPayload: any, @CurrentUser() currentUser: any): Promise<APIResponseInterface<any>> {
-        
-        if (!resultPayload) {
-            resultPayload = {};
-        }
-
-        resultPayload.userId = currentUser.id;
+    async getList (@Body() resultPayload: any): Promise<APIResponseInterface<any>> {
         return await this.resultService.getList(resultPayload);
+    }
+
+    @Post('/out-stading-list')
+    @UseGuards(JwtAuthGuard) 
+    async getOutStandingList (@Body() resultPayload: any): Promise<APIResponseInterface<any>> {
+        return await this.resultService.getOutStandingList(resultPayload);
     }
 
 }

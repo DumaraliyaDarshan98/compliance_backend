@@ -4,11 +4,13 @@ import { Result, ResultSchema } from './schema/result.schema';
 import { ResultService } from './result.service';
 import { ResultController } from './result.controller';
 import { SubPolicyModule } from 'src/modules/sub-policy/sub-policy.module'; // Import the SubPolicyModule
+import { PolicySettingModule } from 'src/modules/policy-setting/policy-setting.module'; // Import the SubPolicyModule
 
 @Module({
     imports: [
         MongooseModule.forFeature([{ name: Result.name, schema: ResultSchema }]),
-        SubPolicyModule
+        SubPolicyModule,
+        PolicySettingModule
     ],
     providers: [ResultService],
     controllers: [ResultController],
