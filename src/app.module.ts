@@ -11,6 +11,8 @@ import { PolicyModule } from './modules/policy/policy.module';
 import { SubPolicyModule } from './modules/sub-policy/sub-policy.module';
 import { PolicySettingModule } from './modules/policy-setting/policy-setting.module';
 import { QuestionModule } from './modules/question/question.module';
+import { AnswerModule } from './modules/answer/answer.module';
+import { ResultModule } from './modules/result/result.module';
 
 @Module({
   imports: [
@@ -19,7 +21,9 @@ import { QuestionModule } from './modules/question/question.module';
     AuthModule,
     PolicyModule,
     PolicySettingModule,
-    QuestionModule
+    QuestionModule,
+    AnswerModule,
+    ResultModule
   ],
   controllers: [AppController],
   providers: [
