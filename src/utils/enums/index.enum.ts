@@ -25,3 +25,8 @@ export enum USER_GROUP {
     EMPLOYEE = '1',
     LINE_MANAGER = '2',
 }
+
+export enum ANSWER_STATUS {
+    PASS = '1',
+    FAIL = '2',
+}
