@@ -52,14 +52,10 @@ export class SubPolicyService {
             name: 1,
             version: 1,
             description: 1,
+            createdAt : 1
           },
         },
-      ];
-
-      // If it's a frontend request, include policy settings with additional filters
-      if (payload?.isFrontEndRequest === 1) {
-        pipeline.push(
-          {
+        {
             $lookup: {
               from: 'policy_settings', // Reference to policy settings collection
               localField: '_id', // Field from subPolicy
@@ -69,7 +65,12 @@ export class SubPolicyService {
           },
           {
             $unwind: '$policySettings', // Deconstruct policySettings array
-          },
+          }
+      ];
+
+      // If it's a frontend request, include policy settings with additional filters
+      if (payload?.isFrontEndRequest === 1) {
+        pipeline.push(
           {
             $match: {
               'policySettings.publishDate': { $lt: new Date() }, // Filter by publish date
