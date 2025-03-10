@@ -1,26 +1,82 @@
-import { BadRequestException, HttpStatus, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
-import { Policy, PolicyDocument } from "./schema/policy.schema";
-import { InjectModel } from "@nestjs/mongoose";
-import { Model } from "mongoose";
-import { APIResponseInterface } from "src/utils/interfaces/response.interface";
+import {
+    BadRequestException,
+    HttpStatus,
+    Injectable,
+    InternalServerErrorException,
+    NotFoundException
+} from "@nestjs/common";
+import {
+    Policy,
+    PolicyDocument
+} from "./schema/policy.schema";
+import {
+    InjectModel
+} from "@nestjs/mongoose";
+import {
+    Model,
+    PipelineStage
+} from "mongoose";
+import {
+    APIResponseInterface
+} from "src/utils/interfaces/response.interface";
 
 @Injectable()
 export class PolicyService {
     constructor(
-        @InjectModel(Policy.name) private readonly policyModel: Model<PolicyDocument>,
-    ) { }
+        @InjectModel(Policy.name) private readonly policyModel: Model < PolicyDocument > ,
+    ) {}
 
-    async getAllPolicy(payload): Promise<APIResponseInterface<any>> {
+    async getAllPolicy(payload): Promise < APIResponseInterface < any >> {
         try {
-           // Create a dynamic filter object
-            const filter: Record<string, any> = {};
+            // Create a dynamic matchQuery object
+            const matchQuery: Record < string, any > = {};
 
-            // If isActive is provided (true or false), add it to the filter
+            // If isActive is provided (true or false), add it to the matchQuery
             if (payload?.isActive !== undefined) {
-                filter.isActive = payload?.isActive;
+                matchQuery.isActive = payload?.isActive;
             }
 
-            const policyList = await this.policyModel.find(filter).exec();
+            const pipeline: PipelineStage[] = [{
+                    $match: matchQuery, // Apply filter criteria
+                },
+                {
+                    $project: {
+                        _id: 1,
+                        name: 1,
+                        version: 1,
+                        description: 1,
+                        createdAt: 1
+                    },
+                },
+                {
+                    $lookup: {
+                        from: 'sub_policies',
+                        localField: '_id',
+                        foreignField: 'policyId',
+                        as: 'subPolicyDetail',
+                    },
+                },
+                {
+                    $addFields: {
+                      subPolicyDetail: {
+                        $sortArray: { input: '$subPolicyDetail', sortBy: { createdAt: -1 } },
+                      },
+                    },
+                  },
+                  {
+                    $group: {
+                      _id: '$_id',
+                      name: { $first: '$name' },
+                      version: { $first: '$version' },
+                      description: { $first: '$description' },
+                      createdAt: { $first: '$createdAt' },
+                      subPolicyDetail: { $first: '$subPolicyDetail' }, // Reassemble the subPolicyDetail array
+                    },
+                  },
+                ];
+
+            const policyList = await this.policyModel.aggregate(pipeline);
+
             return {
                 data: policyList
             }
@@ -30,7 +86,7 @@ export class PolicyService {
         }
     }
 
-    async createPolicy(payload: any): Promise<APIResponseInterface<any>> {
+    async createPolicy(payload: any): Promise < APIResponseInterface < any >> {
         try {
             if (!payload?.name) {
                 return {
@@ -60,7 +116,10 @@ export class PolicyService {
                 }
             }
 
-            const existingDetails = await this.policyModel.findOne({ name: payload?.name, version: payload?.version }).exec();
+            const existingDetails = await this.policyModel.findOne({
+                name: payload?.name,
+                version: payload?.version
+            }).exec();
 
             if (existingDetails) {
                 return {
@@ -75,33 +134,39 @@ export class PolicyService {
 
             const data = await policy.save();
 
-            return { data };
+            return {
+                data
+            };
         } catch (error) {
             console.error("Error createPolicy:", error);
             throw new InternalServerErrorException("Failed to create policy");
         }
     }
 
-    async deleteById(id: string): Promise<APIResponseInterface<any>> {
+    async deleteById(id: string): Promise < APIResponseInterface < any >> {
         try {
             const result = await this.policyModel.findByIdAndDelete(id).exec();
             if (!result) {
                 throw new NotFoundException(`Policy with ID ${id} not found`);
             }
-            return { message: `Policy with ID ${id} deleted successfully` };
+            return {
+                message: `Policy with ID ${id} deleted successfully`
+            };
         } catch (error) {
             console.error("Error deleteById:", error);
             throw new InternalServerErrorException("Failed to deleteById");
         }
     }
 
-    async findById(id: string): Promise<APIResponseInterface<Policy>> {
+    async findById(id: string): Promise < APIResponseInterface < Policy >> {
         try {
             const policyDetails = await this.policyModel.findById(id).exec();
             if (!policyDetails) {
                 throw new NotFoundException(`Policy with ID ${id} not found`);
             }
-            return { data: policyDetails };
+            return {
+                data: policyDetails
+            };
         } catch (error) {
             console.error("Error findById:", error);
             throw new InternalServerErrorException("Failed to findById");
