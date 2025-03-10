@@ -23,13 +23,13 @@ import {
 @Injectable()
 export class PolicyService {
     constructor(
-        @InjectModel(Policy.name) private readonly policyModel: Model < PolicyDocument > ,
-    ) {}
+        @InjectModel(Policy.name) private readonly policyModel: Model<PolicyDocument>,
+    ) { }
 
-    async getAllPolicy(payload): Promise < APIResponseInterface < any >> {
+    async getAllPolicy(payload): Promise<APIResponseInterface<any>> {
         try {
             // Create a dynamic matchQuery object
-            const matchQuery: Record < string, any > = {};
+            const matchQuery: Record<string, any> = {};
 
             // If isActive is provided (true or false), add it to the matchQuery
             if (payload?.isActive !== undefined) {
@@ -37,43 +37,47 @@ export class PolicyService {
             }
 
             const pipeline: PipelineStage[] = [{
-                    $match: matchQuery, // Apply filter criteria
+                $match: matchQuery, // Apply filter criteria
+            },
+            {
+                $project: {
+                    _id: 1,
+                    name: 1,
+                    version: 1,
+                    description: 1,
+                    createdAt: 1,
+                    policyType: 1,
+                    status: 1
                 },
-                {
-                    $project: {
-                        _id: 1,
-                        name: 1,
-                        version: 1,
-                        description: 1,
-                        createdAt: 1
-                    },
+            },
+            {
+                $lookup: {
+                    from: 'sub_policies',
+                    localField: '_id',
+                    foreignField: 'policyId',
+                    as: 'subPolicyDetail',
                 },
-                {
-                    $lookup: {
-                        from: 'sub_policies',
-                        localField: '_id',
-                        foreignField: 'policyId',
-                        as: 'subPolicyDetail',
-                    },
-                },
-                {
-                    $addFields: {
-                      subPolicyDetail: {
+            },
+            {
+                $addFields: {
+                    subPolicyDetail: {
                         $sortArray: { input: '$subPolicyDetail', sortBy: { createdAt: -1 } },
-                      },
                     },
-                  },
-                  {
-                    $group: {
-                      _id: '$_id',
-                      name: { $first: '$name' },
-                      version: { $first: '$version' },
-                      description: { $first: '$description' },
-                      createdAt: { $first: '$createdAt' },
-                      subPolicyDetail: { $first: '$subPolicyDetail' }, // Reassemble the subPolicyDetail array
-                    },
-                  },
-                ];
+                },
+            },
+            {
+                $group: {
+                    _id: '$_id',
+                    name: { $first: '$name' },
+                    version: { $first: '$version' },
+                    description: { $first: '$description' },
+                    createdAt: { $first: '$createdAt' },
+                    policyType: { $first: '$policyType' },
+                    status: { $first: '$status' },
+                    subPolicyDetail: { $first: '$subPolicyDetail' }, // Reassemble the subPolicyDetail array
+                },
+            },
+            ];
 
             const policyList = await this.policyModel.aggregate(pipeline);
 
@@ -86,7 +90,7 @@ export class PolicyService {
         }
     }
 
-    async createPolicy(payload: any): Promise < APIResponseInterface < any >> {
+    async createPolicy(payload: any): Promise<APIResponseInterface<any>> {
         try {
             if (!payload?.name) {
                 return {
@@ -143,7 +147,7 @@ export class PolicyService {
         }
     }
 
-    async deleteById(id: string): Promise < APIResponseInterface < any >> {
+    async deleteById(id: string): Promise<APIResponseInterface<any>> {
         try {
             const result = await this.policyModel.findByIdAndDelete(id).exec();
             if (!result) {
@@ -158,7 +162,7 @@ export class PolicyService {
         }
     }
 
-    async findById(id: string): Promise < APIResponseInterface < Policy >> {
+    async findById(id: string): Promise<APIResponseInterface<Policy>> {
         try {
             const policyDetails = await this.policyModel.findById(id).exec();
             if (!policyDetails) {
