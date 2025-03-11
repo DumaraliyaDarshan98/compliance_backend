@@ -16,6 +16,6 @@ import { MailerService } from 'src/utils/mailer/mailer.service';
     ],
     providers: [EmployeeService, JwtService, MailerService],
     controllers: [EmployeeController],
-    exports: [EmployeeService]
+    exports: [EmployeeService, MongooseModule]
 })
 export class EmployeeModule { }
