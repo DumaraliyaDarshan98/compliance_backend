@@ -19,6 +19,9 @@ export class Answer {
     @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'employees', required: true })
     employeeId: mongoose.Schema.Types.ObjectId;  // Foreign Key-like reference
 
+    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'results', required: true })
+    resultId: mongoose.Schema.Types.ObjectId;  // Foreign Key-like reference
+
     @Prop({ required: true })
     answer: string;
 

@@ -6,7 +6,7 @@ import {
     NotFoundException,
 } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model, ObjectId } from "mongoose";
+import { Model, ObjectId, PipelineStage } from "mongoose";
 import { APIResponseInterface } from "src/utils/interfaces/response.interface";
 import { Answer, AnswerDocument } from "./schema/answer.schema";
 import { SubPolicy, SubPolicyDocument } from 'src/modules/sub-policy/schema/sub-policy.schema';
@@ -69,20 +69,6 @@ export class AnswerService {
             });
 
             const correctQuestionCount = await this.questionModel.countDocuments(query);
-           
-            let answerArray: any = [];
-            
-            payload.answers.forEach(item => {
-              answerArray.push({
-                subPolicyId : payload.subPolicyId,
-                questionId : item.questionId,
-                answer: item.answer,
-                employeeId : payload.userId,
-                created_by: payload.userId
-              });
-            });
-
-            await this.answerModel.insertMany(answerArray);
 
             const score = correctQuestionCount * payload.marksPerQuestion;
             const resultStatus = score >= payload.passingScore ? 1 : 2;
@@ -99,6 +85,21 @@ export class AnswerService {
             const saveResult = new this.resultModel(resultArray);
                                 await saveResult.save();
 
+            let answerArray: any = [];
+            
+            payload.answers.forEach(item => {
+              answerArray.push({
+                subPolicyId : payload.subPolicyId,
+                questionId : item.questionId,
+                resultId : saveResult._id,
+                answer: item.answer,
+                employeeId : payload.userId,
+                created_by: payload.userId
+              });
+            });
+
+            await this.answerModel.insertMany(answerArray);
+
             return {
                 code: HttpStatus.CREATED,
                 message: 'Result has generated successfully.',
@@ -111,4 +112,65 @@ export class AnswerService {
             };
         }
     }
+
+    async getTestQuestionList(payload: any): Promise<APIResponseInterface<any>> {
+     try {
+          const requiredFields = [
+               { field: "resultId", message: "Result Id is required" },
+          ];
+
+          for (const { field, message } of requiredFields) {
+               if (!payload?.[field]) {
+                    return {
+                         code: HttpStatus.BAD_REQUEST,
+                         message,
+                    };
+               }
+          }
+
+          var resultId = new mongoose.Types.ObjectId(payload.resultId);
+ 
+          var pipeline: PipelineStage[] = [
+                    {
+                         $match : {
+                              resultId : resultId
+                         }
+                    },
+                    {
+                         $project: {
+                              _id: 1,
+                              subPolicyId: 1,
+                              questionId: 1,
+                              employeeId: 1,
+                              resultId :1,
+                              answer:1
+                         },
+                    },
+                    {
+                         $lookup: {
+                              from: "questions",
+                              localField: "_id",
+                              foreignField: "questionId",
+                              as: "questionDetails",
+                         },
+                    }
+               ];
+
+          var data = await this.answerModel.aggregate(pipeline);
+      
+          return {
+               code: HttpStatus.CREATED,
+               message: "Question list successfully",
+               data: data,
+          };
+     } catch (error) {
+          console.error("Error getList:", error);
+          return {
+               code: HttpStatus.INTERNAL_SERVER_ERROR,
+               message: error.message,
+          };
+     }
+     }
+
+
 }

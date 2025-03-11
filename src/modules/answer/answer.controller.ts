@@ -18,4 +18,10 @@ export class AnswerController {
         answerPayload.userId = currentUser.id;
         return await this.answerService.saveAnswer(answerPayload);
     }
+
+    @UseGuards(JwtAuthGuard)
+    @Post('/get-test-question-list')
+    async getTestQuestionList(@Body() answerPayload: any) {
+        return this.answerService.getTestQuestionList(answerPayload);
+    }
 }
