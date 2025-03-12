@@ -173,23 +173,24 @@ export class QuestionService {
 
             if (payload?.size !== undefined) {
 
-                var size = payload?.size;
+                const size = payload?.size;
                 const allQuestions = selectedQuestions;
 
-                const randomNumber = Math.floor(Math.random() * size) + 1;  // 1 to 5 random documents
+                // Ensure that randomNumber does not exceed the available questions
+                const randomNumber = Math.min(Math.floor(Math.random() * size) + 1, allQuestions.length); 
 
                 // Step 3: Generate random indices
-                const randomIndices = [];
-                while (randomIndices.length < randomNumber) {
-                  const randIndex = Math.floor(Math.random() * allQuestions.length);
-                  if (!randomIndices.includes(randIndex)) {
-                    randomIndices.push(randIndex);
-                  }
+                const randomIndices: Set<number> = new Set(); // Explicitly declare the Set type as number
+
+                while (randomIndices.size < randomNumber) {
+                    const randIndex = Math.floor(Math.random() * allQuestions.length);
+                    randomIndices.add(randIndex);
                 }
 
                 // Step 4: Select documents based on random indices
-                selectedQuestions = randomIndices.map(index => allQuestions[index]);
+                selectedQuestions = Array.from(randomIndices).map((index: number) => allQuestions[index]);
             }
+
 
             if (selectedQuestions.length === 0) {
                 return {
