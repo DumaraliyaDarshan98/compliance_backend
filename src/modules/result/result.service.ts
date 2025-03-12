@@ -240,7 +240,6 @@ export class ResultService {
         try {
             const requiredFields = [
                 { field: "subPolicyId", message: "Sub Policy Id is required" },
-                { field: "listType", message: "List Type is required" },
             ];
 
             for (const { field, message } of requiredFields) {
@@ -252,15 +251,23 @@ export class ResultService {
                 }
             }
 
-            const employeeList = await this.getAdminEmployeeList('EMPLOYEE', payload);
-            const lineManagerdata = await this.getAdminEmployeeList('LINE_MANAGER', payload);
+            payload.listType = 1;
+            const empCompletedList = await this.getAdminEmployeeList('EMPLOYEE', payload);
+            const lineManagerCompletedlist = await this.getAdminEmployeeList('LINE_MANAGER', payload);
+            const completedCount = empCompletedList.length + lineManagerCompletedlist.length;
 
-            const resultDetailsCount = employeeList.length + lineManagerdata.length;
+            payload.listType = 2;
+            const empOutStadingList = await this.getAdminEmployeeList('EMPLOYEE', payload);
+           const lineManagerOutStadinglist = await this.getAdminEmployeeList('LINE_MANAGER', payload);
+            const OutStadingCount = empOutStadingList.length + lineManagerOutStadinglist.length;
 
             const data = {
-                count: resultDetailsCount,
-                employeeList: employeeList,
-                lineManagerdata: lineManagerdata,
+                completedCount: completedCount,
+                empCompletedList: empCompletedList,
+                lineManagerCompletedlist: lineManagerCompletedlist,
+                OutStadingCount:OutStadingCount,
+                empOutStadingList:empOutStadingList,
+                lineManagerOutStadinglist:lineManagerOutStadinglist
             };
 
             return {
@@ -293,22 +300,20 @@ export class ResultService {
         const array = await this.resultModel.aggregate(pipeline);
 
         const ids = array.map((doc: any) => new mongoose.Types.ObjectId(doc._id));
-
+        
         let empMatchQuery: any = {};
-
         if (payload.listType === 1) {
             empMatchQuery._id = { $in: ids };
         } else {
             empMatchQuery._id = { $nin: ids };
-            empMatchQuery.role = { $eq: ROLES.ADMIN };
         }
 
         if (role === 'Admin') {
-            empMatchQuery.role = { $eq: ROLES.ADMIN };
+            empMatchQuery.role = ROLES.ADMIN;
         } else if (role === 'EMPLOYEE') {
-            empMatchQuery.role = { $eq: ROLES.EMPLOYEE };
+            empMatchQuery.role = ROLES.EMPLOYEE;
         } else {
-            empMatchQuery.role = { $eq: ROLES.LINE_MANAGER };
+            empMatchQuery.role = ROLES.LINE_MANAGER;
         }
 
         if (payload?.searchTest) {
@@ -324,9 +329,10 @@ export class ResultService {
                 empSort['resultDetails._id'] = parseInt(payload?.orderBy.result, 10);
             }
         } else {
-            empSort['resultDetails._id'] = -1;
+            empSort['_id'] = -1;
         }
 
+        if(payload.listType == 1) {
         const empPipeline: PipelineStage[] = [
             { $match: empMatchQuery },
             {
@@ -351,7 +357,7 @@ export class ResultService {
                 },
             },
             { $unwind: "$resultDetails" }, // Flatten the resultDetails array
-            { $sort: empSort },
+            { $sort: { "resultDetails._id" : -1 } },
             {
                 $group: {
                     _id: "$_id",
@@ -361,8 +367,25 @@ export class ResultService {
                     resultDetails: { $push: '$resultDetails' },
                 },
             },
+            { $sort: empSort },
         ];
-
         return await this.employeeModel.aggregate(empPipeline);
+
+        } else {
+        const empPipeline: PipelineStage[] = [
+            { $match: empMatchQuery },
+            {
+                $project: {
+                    _id: 1,
+                    firstName: 1,
+                    middleName: 1,
+                    lastName: 1,
+                },
+            },
+            { $sort: empSort },
+        ];
+                return await this.employeeModel.aggregate(empPipeline);
+        }
+
     }
 }
