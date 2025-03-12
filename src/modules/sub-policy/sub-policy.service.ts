@@ -1,9 +1,9 @@
-import { 
-  BadRequestException, 
-  HttpStatus, 
-  Injectable, 
-  InternalServerErrorException, 
-  NotFoundException 
+import {
+  BadRequestException,
+  HttpStatus,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException
 } from '@nestjs/common';
 import { SubPolicy, SubPolicyDocument } from './schema/sub-policy.schema';
 import { InjectModel } from '@nestjs/mongoose';
@@ -15,12 +15,12 @@ import * as mongoose from 'mongoose';
 @Injectable()
 export class SubPolicyService {
   constructor(
-    @InjectModel(PolicySetting.name) 
+    @InjectModel(PolicySetting.name)
     private readonly policySettingModel: Model<PolicySettingDocument>,
-    
-    @InjectModel(SubPolicy.name) 
+
+    @InjectModel(SubPolicy.name)
     private readonly subPolicyModel: Model<SubPolicyDocument>,
-  ) {}
+  ) { }
 
   async getAllSubPolicy(payload: any): Promise<APIResponseInterface<any>> {
     try {
@@ -33,7 +33,7 @@ export class SubPolicyService {
       }
 
       const policyId = new mongoose.Types.ObjectId(payload.policyId);
-      
+
       // Dynamic filter object creation
       const matchQuery: any = { policyId: policyId };
 
@@ -52,20 +52,17 @@ export class SubPolicyService {
             name: 1,
             version: 1,
             description: 1,
-            createdAt : 1
+            createdAt: 1
           },
         },
         {
-            $lookup: {
-              from: 'policy_settings', // Reference to policy settings collection
-              localField: '_id', // Field from subPolicy
-              foreignField: 'subPolicyId', // Field from policy_settings
-              as: 'policySettings', // Output array of policySettings
-            },
+          $lookup: {
+            from: 'policy_settings', // Reference to policy settings collection
+            localField: '_id', // Field from subPolicy
+            foreignField: 'subPolicyId', // Field from policy_settings
+            as: 'policySettings', // Output array of policySettings
           },
-          {
-            $unwind: '$policySettings', // Deconstruct policySettings array
-          }
+        }
       ];
 
       // If it's a frontend request, include policy settings with additional filters
@@ -76,8 +73,20 @@ export class SubPolicyService {
               'policySettings.publishDate': { $lt: new Date() }, // Filter by publish date
               'policySettings.examTimeLimit': { $gte: new Date() }, // Filter by exam time limit
             },
+          },
+          {
+            $unwind: '$policySettings',
           }
         );
+      } else {
+        pipeline.push(
+          {
+            $unwind: {
+              path: "$policySettings",
+              preserveNullAndEmptyArrays: true, // Keeps sub-policies even if there's no match
+            },
+          }
+        )
       }
 
       // Execute aggregation pipeline
