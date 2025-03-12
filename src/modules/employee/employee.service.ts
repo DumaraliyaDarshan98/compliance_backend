@@ -65,6 +65,11 @@ export class EmployeeService {
             throw new BadRequestException(`All provided emails already exist.`);
         }
 
+        for (const employee of newEmployees) {
+            employee['dateOfJoining'] = employee?.dateOfJoining ?  new Date(employee.dateOfJoining) : new Date();
+            employee['birthDate'] = employee?.birthDate ?  new Date(employee.birthDate) : new Date();
+        }
+
         try {
             // Bulk insert new employees
             const createdEmployees = await this.employeeModel.insertMany(newEmployees);

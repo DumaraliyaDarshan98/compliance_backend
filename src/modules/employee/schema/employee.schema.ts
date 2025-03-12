@@ -19,8 +19,8 @@ export class Employee {
     @Prop({ required: true })
     lastName: string;
 
-    @Prop({ required: true, enum: Gender })
-    gender: Gender;
+    @Prop({ required: true })
+    gender: string;
 
     @Prop({ required: true, type: Date })
     birthDate: Date;
