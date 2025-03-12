@@ -24,4 +24,12 @@ export class AuthController {
     ): Promise<APIResponseInterface<any>> {
         return await this.authService.resetPassword(token, password);
     }
+
+    @Patch('create-password')
+    async createPassword(
+        @Query('token') token: string,
+        @Body('password') password: string
+    ): Promise<APIResponseInterface<any>> {
+        return await this.authService.createPassword(token, password);
+    }
 }

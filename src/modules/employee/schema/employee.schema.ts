@@ -49,8 +49,8 @@ export class Employee {
     @Prop({ required: true, enum: ROLES })
     role: ROLES;
 
-    @Prop({ required: true })
-    password: string;
+    @Prop()
+    password?: string;
 
     @Prop()
     resetPasswordToken?: string;

@@ -11,7 +11,7 @@ export class EmployeeController {
 
     @Post()
     async create(@Body() employeeDto: any): Promise<APIResponseInterface<any>> {
-        return await this.employeeService.createEmployee(employeeDto);
+        return await this.employeeService.bulkCreate(employeeDto);
     }
     @Get()
     async findAll(): Promise<APIResponseInterface<any>> {

@@ -5,6 +5,7 @@ import { Model } from "mongoose";
 import { APIResponseInterface } from "src/utils/interfaces/response.interface";
 import * as bcrypt from 'bcrypt';
 import { MailerService } from "src/utils/mailer/mailer.service";
+import { CONFIG } from "src/utils/keys/keys";
 @Injectable()
 export class EmployeeService {
     constructor(
@@ -25,22 +26,59 @@ export class EmployeeService {
         }
 
         // Hash password before saving
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
-        const employee = new this.employeeModel({ ...rest, password: hashedPassword });
+        // const salt = await bcrypt.genSalt(10);
+        // const hashedPassword = await bcrypt.hash(password, salt);
+        const employee = new this.employeeModel({ ...rest });
 
         try {
             const data = await employee.save();
 
             // Mail send to user
-            const resetUrl = `http://localhost:4200/reset?token=${data.email}`;
+            const resetUrl = `${CONFIG.frontURL}create-password?token=${data.email}`;
             const emailContent: any = `<p>Click <a href="${resetUrl}">here</a> to set your new password.</p>`;
-            await this.mailService.sendResetPasswordEmail(data.email, emailContent);
+            await this.mailService.sendResetPasswordEmail(data.email, emailContent, 'Set Your Password');
 
             return { data };
         } catch (error) {
-            console.error("Error saving employee:", error);
             throw new InternalServerErrorException("Failed to create employee");
+        }
+    }
+
+    async bulkCreate(employeeDtos: any[]): Promise<APIResponseInterface<any>> {
+        if (!Array.isArray(employeeDtos) || employeeDtos.length === 0) {
+            throw new BadRequestException(`Invalid request. Please provide employee data.`);
+        }
+
+        // Extract emails from payload
+        const emails = employeeDtos.map(emp => emp.email);
+
+        // Check for existing employees with the given emails
+        const existingEmployees = await this.employeeModel.find({ email: { $in: emails } }).exec();
+        const existingEmails = new Set(existingEmployees.map(emp => emp.email));
+
+        // Filter out employees that already exist
+        const newEmployees = employeeDtos
+            .filter(emp => !existingEmails.has(emp.email))
+            .map(({ password, ...rest }) => new this.employeeModel(rest));
+
+        if (newEmployees.length === 0) {
+            throw new BadRequestException(`All provided emails already exist.`);
+        }
+
+        try {
+            // Bulk insert new employees
+            const createdEmployees = await this.employeeModel.insertMany(newEmployees);
+
+            // Send password reset email to newly created employees
+            for (const employee of createdEmployees) {
+                const resetUrl = `${CONFIG.frontURL}create-password?token=${employee.email}`;
+                const emailContent = `<p>Click <a href="${resetUrl}">here</a> to set your new password.</p>`;
+                await this.mailService.sendResetPasswordEmail(employee.email, emailContent, 'Set Your Password');
+            }
+
+            return { data: createdEmployees };
+        } catch (error) {
+            throw new InternalServerErrorException("Failed to create employees");
         }
     }
 

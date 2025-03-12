@@ -16,11 +16,11 @@ export class MailerService {
         });
     }
 
-    async sendResetPasswordEmail(to: string, content: any) {
+    async sendResetPasswordEmail(to: string, content: any, title?: string) {
         const mailOptions = {
             from: CONFIG.email,
             to,
-            subject: 'Reset Your Password',
+            subject: title || 'Reset Your Password',
             html: content
             //   html: `<p>Click <a href="${resetUrl}">here</a> to reset your password.</p>`,
         };
