@@ -83,19 +83,19 @@ export class AnswerService {
             };
 
             const saveResult = new this.resultModel(resultArray);
-                                await saveResult.save();
+            await saveResult.save();
 
             let answerArray: any = [];
             
             payload.answers.forEach(item => {
-              answerArray.push({
-                subPolicyId : payload.subPolicyId,
-                questionId : item.questionId,
-                resultId : saveResult._id,
-                answer: item.answer,
-                employeeId : payload.userId,
-                created_by: payload.userId
-              });
+                answerArray.push({
+                    subPolicyId : payload.subPolicyId,
+                    questionId : item.questionId,
+                    resultId : saveResult._id,
+                    answer: item.answer,
+                    employeeId : payload.userId,
+                    created_by: payload.userId
+                });
             });
 
             await this.answerModel.insertMany(answerArray);
@@ -114,23 +114,35 @@ export class AnswerService {
     }
 
     async getTestQuestionList(payload: any): Promise<APIResponseInterface<any>> {
-     try {
-          const requiredFields = [
+        try {
+            const requiredFields = [
                { field: "resultId", message: "Result Id is required" },
-          ];
+            ];
 
-          for (const { field, message } of requiredFields) {
-               if (!payload?.[field]) {
+            for (const { field, message } of requiredFields) {
+                if (!payload?.[field]) {
                     return {
-                         code: HttpStatus.BAD_REQUEST,
-                         message,
+                        code: HttpStatus.BAD_REQUEST,
+                        message,
                     };
-               }
-          }
+                }
+            }
 
-          var resultId = new mongoose.Types.ObjectId(payload.resultId);
+            // Handle dynamic sorting based on `sortBy` and `sortOrder`
+            let sortOptions = {};
+            if (payload.sortBy && payload.sortOrder) {
+                sortOptions[payload.sortBy] = payload.sortOrder === "asc" ? 1 : -1; // Ascending or descending
+            } else {
+                sortOptions['_id'] = -1;
+            }
+
+            var pageNumber = payload.pageNumber || 1;
+            var pageLimit = payload.pageLimit || 10;
+            const pageOffset = (pageNumber - 1) * pageLimit; // Calculate the offset
+
+            var resultId = new mongoose.Types.ObjectId(payload.resultId);
  
-          var pipeline: PipelineStage[] = [
+            var pipeline: PipelineStage[] = [
                     {
                          $match : {
                               resultId : resultId
@@ -143,34 +155,60 @@ export class AnswerService {
                               questionId: 1,
                               employeeId: 1,
                               resultId :1,
-                              answer:1
+                              answer:1,
+                              createdAt : 1
                          },
                     },
                     {
                          $lookup: {
                               from: "questions",
-                              localField: "_id",
-                              foreignField: "questionId",
+                              localField: "questionId",
+                              foreignField: "_id",
                               as: "questionDetails",
                          },
-                    }
+                    },
+                    {
+                        $unwind: {
+                            path: "$policySettings",
+                            preserveNullAndEmptyArrays: true,
+                        },
+                    },
+                    {
+                        $sort : sortOptions,
+                    },
+                    {
+                        $skip: pageOffset,
+                    },
+                    {
+                        $limit: pageLimit,
+                    },
                ];
 
-          var data = await this.answerModel.aggregate(pipeline);
-      
-          return {
-               code: HttpStatus.CREATED,
-               message: "Question list successfully",
-               data: data,
-          };
-     } catch (error) {
-          console.error("Error getList:", error);
-          return {
-               code: HttpStatus.INTERNAL_SERVER_ERROR,
-               message: error.message,
-          };
-     }
-     }
+            var data = await this.answerModel.aggregate(pipeline);
+            
+            if(data.length <= 0){
+                return {
+                    code :HttpStatus.OK,
+                    message : "Question list not found."
+                }
+            }
 
-
+            return {
+                code: HttpStatus.OK,
+                message: "Question list successfully",
+                data: {
+                    answerList : data,
+                    count : data.length,
+                    pageNumber : pageNumber,
+                    pageLimit: pageLimit
+                },
+            };
+        } catch (error) {
+            console.error("Error getList:", error);
+            return {
+                code: HttpStatus.INTERNAL_SERVER_ERROR,
+                message: error.message,
+            };
+        }
+    }
 }

@@ -28,62 +28,107 @@ export class PolicyService {
 
     async getAllPolicy(payload): Promise<APIResponseInterface<any>> {
         try {
-            // Create a dynamic matchQuery object
-            const matchQuery: Record<string, any> = {};
+            let matchQuery: any = {};
 
-            // If isActive is provided (true or false), add it to the matchQuery
             if (payload?.isActive !== undefined) {
-                matchQuery.isActive = payload?.isActive;
+                matchQuery.isActive = payload?.isActive; 
             }
 
-            const pipeline: PipelineStage[] = [{
-                $match: matchQuery, // Apply filter criteria
-            },
-            {
-                $project: {
-                    _id: 1,
-                    name: 1,
-                    version: 1,
-                    description: 1,
-                    createdAt: 1,
-                    policyType: 1,
-                    status: 1
+            if (payload.searchText && payload.searchText.trim() !== "") {
+                if (!matchQuery.$and) {
+                    matchQuery.$and = []; 
+                }
+
+                matchQuery.$and.push({
+                    $or: [
+                        { name: { $regex: payload.searchText, $options: 'i' } }, 
+                        { description: { $regex: payload.searchText, $options: 'i' } }                      ]
+                });
+            }
+
+            let sortOptions = {};
+            if (payload.sortBy && payload.sortOrder) {
+                sortOptions[payload.sortBy] = payload.sortOrder === "asc" ? 1 : -1;
+            } else {
+                sortOptions['_id'] = -1;
+            }
+
+            var pageNumber = payload.pageNumber || 1;
+            var pageLimit = payload.pageLimit || 10;
+            const pageOffset = (pageNumber - 1) * pageLimit;
+
+            const pipeline: PipelineStage[] = [
+                {
+                    $match: matchQuery, // Apply filter criteria
                 },
-            },
-            {
-                $lookup: {
-                    from: 'sub_policies',
-                    localField: '_id',
-                    foreignField: 'policyId',
-                    as: 'subPolicyDetail',
-                },
-            },
-            {
-                $addFields: {
-                    subPolicyDetail: {
-                        $sortArray: { input: '$subPolicyDetail', sortBy: { createdAt: -1 } },
+                {
+                    $project: {
+                        _id: 1,
+                        name: 1,
+                        version: 1,
+                        description: 1,
+                        createdAt: 1,
+                        policyType: 1,
+                        status: 1
                     },
                 },
-            },
-            {
-                $group: {
-                    _id: '$_id',
-                    name: { $first: '$name' },
-                    version: { $first: '$version' },
-                    description: { $first: '$description' },
-                    createdAt: { $first: '$createdAt' },
-                    policyType: { $first: '$policyType' },
-                    status: { $first: '$status' },
-                    subPolicyDetail: { $first: '$subPolicyDetail' }, // Reassemble the subPolicyDetail array
+                {
+                    $lookup: {
+                        from: 'sub_policies',
+                        localField: '_id',
+                        foreignField: 'policyId',
+                        as: 'subPolicyDetail',
+                    },
                 },
-            },
+                {
+                    $addFields: {
+                        subPolicyDetail: {
+                            $sortArray: { input: '$subPolicyDetail', sortBy: { createdAt: -1 } },
+                        },
+                    },
+                },
+                {
+                    $group: {
+                        _id: '$_id',
+                        name: { $first: '$name' },
+                        version: { $first: '$version' },
+                        description: { $first: '$description' },
+                        createdAt: { $first: '$createdAt' },
+                        policyType: { $first: '$policyType' },
+                        status: { $first: '$status' },
+                        subPolicyDetail: { $push: '$subPolicyDetail' }, // Reassemble the subPolicyDetail array
+                    },
+                },
+                {
+                    $sort : sortOptions,
+                },
+                {
+                    $skip: pageOffset,
+                },
+                {
+                    $limit: pageLimit,
+                },
             ];
 
             const policyList = await this.policyModel.aggregate(pipeline);
 
-            return {
-                data: policyList
+            if(policyList.length <= 0){
+                return {
+                    code :HttpStatus.OK,
+                    message : "Policy list not found."
+                }
             }
+
+            return {
+                code: HttpStatus.OK,
+                message: "Policy list.",
+                data: {
+                    policyList : policyList,
+                    count : policyList.length,
+                    pageNumber : pageNumber,
+                    pageLimit: pageLimit
+                },
+            };
         } catch (error) {
             console.error("Error getAllPolicy:", error);
             throw new InternalServerErrorException("Failed to get list policy");

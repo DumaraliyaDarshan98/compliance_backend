@@ -17,9 +17,9 @@ export class EmployeeController {
         return await this.employeeService.createEmployee(img, body);
     }
 
-    @Get()
-    async findAll(): Promise<APIResponseInterface<any>> {
-        return await this.employeeService.getAllEmployee();
+    @Post('list')
+    async findAll(@Body() employeePayload: any): Promise<APIResponseInterface<any>> {
+        return await this.employeeService.getAllEmployee(employeePayload);
     }
 
     @UseGuards(JwtAuthGuard)

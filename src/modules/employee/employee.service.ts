@@ -1,11 +1,4 @@
-import {
-  BadRequestException,
-  forwardRef,
-  Inject,
-  Injectable,
-  InternalServerErrorException,
-  NotFoundException
-} from "@nestjs/common";
+import { BadRequestException, forwardRef, Inject, Injectable, InternalServerErrorException, NotFoundException, HttpStatus } from "@nestjs/common";
 import { Employee, EmployeeDocument } from "./schema/employee.schema";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
@@ -36,18 +29,10 @@ export class EmployeeService {
       throw new BadRequestException(`Email Already Exists`);
     }
 
-    // Hash password before saving
-    // const salt = await bcrypt.genSalt(10);
-    // const hashedPassword = await bcrypt.hash(password, salt);
     const employee = new this.employeeModel({ ...rest, profileImg: '/uploads/profile/' + img.filename });
 
     try {
       const data = await employee.save();
-
-      // Mail send to user
-      // const resetUrl = `${CONFIG.frontURL}create-password?token=${data.email}`;
-      // const emailContent: any = `<p>Click <a href="${resetUrl}">here</a> to set your new password.</p>`;
-      // await this.mailService.sendResetPasswordEmail(data.email, emailContent, 'Set Your Password');
 
       return { data };
     } catch (error) {
@@ -61,14 +46,11 @@ export class EmployeeService {
       throw new BadRequestException(`Invalid request. Please provide employee data.`);
     }
 
-    // Extract emails from payload
     const emails = employeeDtos.map(emp => emp.email);
 
-    // Check for existing employees with the given emails
     const existingEmployees = await this.employeeModel.find({ email: { $in: emails } }).exec();
     const existingEmails = new Set(existingEmployees.map(emp => emp.email));
 
-    // Filter out employees that already exist
     const newEmployees = employeeDtos
       .filter(emp => !existingEmails.has(emp.email))
       .map(({ password, ...rest }) => new this.employeeModel(rest));
@@ -83,10 +65,8 @@ export class EmployeeService {
     }
 
     try {
-      // Bulk insert new employees
       const createdEmployees = await this.employeeModel.insertMany(newEmployees);
 
-      // Send password reset email to newly created employees
       for (const employee of createdEmployees) {
         const resetUrl = `${CONFIG.frontURL}create-password?token=${employee.email}`;
         const emailContent = `<p>Click <a href="${resetUrl}">here</a> to set your new password.</p>`;
@@ -99,10 +79,52 @@ export class EmployeeService {
     }
   }
 
-  async getAllEmployee(): Promise<APIResponseInterface<any>> {
+  async getAllEmployee(payload: any): Promise<APIResponseInterface<any>> {
     try {
-      const employeeList = await this.employeeModel.find().exec();
-      return { data: employeeList };
+      let query = {};
+
+      if (payload.searchText && payload.searchText.trim() !== "") {
+        query = {
+          $or: [
+            { email: { $regex: payload.searchText, $options: 'i' } },
+            { firstName: { $regex: payload.searchText, $options: 'i' } },
+            { lastName: { $regex: payload.searchText, $options: 'i' } }
+          ]
+        };
+      }
+
+      let sortOptions = {};
+      if (payload.sortBy && payload.sortOrder) {
+        sortOptions[payload.sortBy] = payload.sortOrder === "asc" ? 1 : -1;
+      } else {
+        sortOptions['_id'] = -1;
+      }
+
+      const pageNumber = payload.pageNumber || 1;
+      const pageLimit = payload.pageLimit || 10;
+      const pageOffset = (pageNumber - 1) * pageLimit;
+
+      const employeeList = await this.employeeModel.find(query)
+        .sort(sortOptions)
+        .skip(pageOffset)
+        .limit(pageLimit)
+        .exec();
+
+      if(employeeList.length <= 0){
+        return {
+            code :HttpStatus.OK,
+            message : "Employee list not found."
+        }
+      }
+
+      return {
+        data: {
+          employeeList: employeeList,
+          count: employeeList.length,
+          pageNumber: pageNumber,
+          pageLimit: pageLimit
+        }
+      };
     } catch (error) {
       console.error("Error getAllEmployee:", error);
       throw new InternalServerErrorException("Failed to getAllEmployee");
@@ -149,10 +171,7 @@ export class EmployeeService {
     }
   }
 
-  async updateEmployee(
-    body: any,
-    img?: Express.Multer.File
-  ): Promise<APIResponseInterface<any>> {
+  async updateEmployee(body: any, img?: Express.Multer.File): Promise<APIResponseInterface<any>> {
     const employeeDto = typeof body.data === 'string' ? JSON.parse(body.data) : body.data;
     const { password, profileImg, ...rest } = employeeDto;
 
@@ -177,20 +196,13 @@ export class EmployeeService {
       // employeeDto.password = await bcrypt.hash(password, salt);
     }
 
-    // If a new profile image is uploaded, set the profileImg field
     if (img) {
-      // if (fs.existsSync(oldImagePath)) {
-      //     fs.unlinkSync(oldImagePath);
-      // }
-
       employeeDto.profileImg = '/uploads/profile/' + img.filename;
     }
 
-    // Update the employee's data (excluding password if not provided)
     Object.assign(existingEmployee, rest, { profileImg: employeeDto.profileImg });
 
     try {
-      // Save the updated employee data
       const updatedEmployee = await existingEmployee.save();
 
       return {

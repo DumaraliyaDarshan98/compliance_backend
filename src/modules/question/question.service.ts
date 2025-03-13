@@ -126,9 +126,20 @@ export class QuestionService {
                 matchQuery.isActive = payload?.isActive;
             }
 
-            if (payload?.questionText && payload.questionText.trim() !== "") {
-                matchQuery.questionText = { $regex: payload.questionText, $options: 'i' };
+            if (payload?.searchText && payload.searchText.trim() !== "") {
+                matchQuery.questionText = { $regex: payload.searchText, $options: 'i' };
             }
+
+            let sortOptions = {};
+            if (payload.sortBy && payload.sortOrder) {
+                sortOptions[payload.sortBy] = payload.sortOrder === "asc" ? 1 : -1;
+            } else {
+                sortOptions['_id'] = -1;
+            }
+
+            var pageNumber = payload.pageNumber || 1;
+            var pageLimit = payload.pageLimit || 10;
+            const pageOffset = (pageNumber - 1) * pageLimit;
             
             const pipeline: PipelineStage[] = [
                 {
@@ -165,6 +176,15 @@ export class QuestionService {
                         foreignField: 'questionId',
                         as: 'optionsDetails',
                     },
+                },
+                {
+                    $sort : sortOptions,
+                },
+                {
+                    $skip: pageOffset,
+                },
+                {
+                    $limit: pageLimit,
                 }
             ];
 
@@ -194,15 +214,20 @@ export class QuestionService {
 
             if (selectedQuestions.length === 0) {
                 return {
-                    code: HttpStatus.NOT_FOUND,
-                    message: 'Not Found',
+                    code: HttpStatus.OK,
+                    message: 'Question list not found',
                 };
             }
 
             return {
-                code: HttpStatus.CREATED,
-                message: 'Question List',
-                data: selectedQuestions,
+                code: HttpStatus.OK,
+                message: "Question list.",
+                data: {
+                    questionList: selectedQuestions,
+                    count: selectedQuestions.length,
+                    pageNumber: pageNumber,
+                    pageLimit: pageLimit
+                },
             };
 
         } catch (error) {

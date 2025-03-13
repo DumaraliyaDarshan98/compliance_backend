@@ -44,20 +44,20 @@ export class ResultService {
             // Match query for filtering questions
             let matchQuery: any = { isActive: 1 };
 
-            if (payload?.searchTest) {
-                matchQuery.name = { $regex: new RegExp(payload?.searchTest, 'i') };
+            if (payload?.searchText && payload.searchText.trim() !== "") {
+                matchQuery.name = { $regex: payload.searchText, $options: 'i' };
             }
 
-            const sort: any = {};
-            if (payload?.orderBy) {
-                if (payload?.orderBy.name) {
-                    sort['name'] = parseInt(payload?.orderBy.name, 10);
-                } else if (payload?.orderBy.result) {
-                    sort['resultDetails._id'] = parseInt(payload?.orderBy.result, 10);
-                }
+            let sortOptions = {};
+            if (payload.sortBy && payload.sortOrder) {
+                sortOptions[payload.sortBy] = payload.sortOrder === "asc" ? 1 : -1;
             } else {
-                sort['resultDetails._id'] = -1;
+                sortOptions['_id'] = -1;
             }
+
+            var pageNumber = payload.pageNumber || 1;
+            var pageLimit = payload.pageLimit || 10;
+            const pageOffset = (pageNumber - 1) * pageLimit;
 
             const pipeline: PipelineStage[] = [
                 {
@@ -108,23 +108,34 @@ export class ResultService {
                     },
                 },
                 {
-                    $sort: sort,
+                    $sort : sortOptions,
                 },
+                {
+                    $skip: pageOffset,
+                },
+                {
+                    $limit: pageLimit,
+                }
             ];
 
             const result = await this.subPolicyModel.aggregate(pipeline);
 
             if (result.length === 0) {
                 return {
-                    code: HttpStatus.NOT_FOUND,
-                    message: 'Not Found',
+                    code: HttpStatus.OK,
+                    message: "Result Not Found",
                 };
             }
 
             return {
                 code: HttpStatus.CREATED,
-                message: "Result list successfully",
-                data: result,
+                message: "Result list",
+                data: {
+                    subPolicyList: result,
+                    count: result.length,
+                    pageNumber: pageNumber,
+                    pageLimit: pageLimit
+                },
             };
         } catch (error) {
             console.error("Error getList:", error);
@@ -154,6 +165,21 @@ export class ResultService {
 
             // Match query for filtering questions
             let matchQuery: any = { isActive: 1 };
+
+            if (payload?.searchText && payload.searchText.trim() !== "") {
+                matchQuery.name = { $regex: payload.searchText, $options: 'i' };
+            }
+
+            let sortOptions = {};
+            if (payload.sortBy && payload.sortOrder) {
+                sortOptions[payload.sortBy] = payload.sortOrder === "asc" ? 1 : -1;
+            } else {
+                sortOptions['_id'] = -1;
+            }
+
+            var pageNumber = payload.pageNumber || 1;
+            var pageLimit = payload.pageLimit || 10;
+            const pageOffset = (pageNumber - 1) * pageLimit;
 
             const pipeline: PipelineStage[] = [
                 {
@@ -210,6 +236,15 @@ export class ResultService {
                         resultDetails: { $push: "$resultDetails" }, // Reassemble the resultDetails array
                     },
                 },
+                {
+                    $sort : sortOptions,
+                },
+                {
+                    $skip: pageOffset,
+                },
+                {
+                    $limit: pageLimit,
+                }
             ];
 
             const result = await this.subPolicyModel.aggregate(pipeline);
@@ -224,7 +259,12 @@ export class ResultService {
             return {
                 code: HttpStatus.CREATED,
                 message: "Result list successfully",
-                data: result,
+                data: {
+                    subPolicyList: result,
+                    count: result.length,
+                    pageNumber: pageNumber,
+                    pageLimit: pageLimit
+                },
             };
         } catch (error) {
             console.error("Error getOutStandingList:", error);
@@ -333,59 +373,61 @@ export class ResultService {
         }
 
         if(payload.listType == 1) {
-        const empPipeline: PipelineStage[] = [
-            { $match: empMatchQuery },
-            {
-                $project: {
-                    _id: 1,
-                    firstName: 1,
-                    middleName: 1,
-                    lastName: 1,
+            const empPipeline: PipelineStage[] = [
+                { $match: empMatchQuery },
+                {
+                    $project: {
+                        _id: 1,
+                        firstName: 1,
+                        middleName: 1,
+                        lastName: 1,
+                    },
                 },
-            },
-            {
-                $lookup: {
-                    from: "results",
-                    localField: "_id",
-                    foreignField: "employeeId",
-                    as: "resultDetails",
+                {
+                    $lookup: {
+                        from: "results",
+                        localField: "_id",
+                        foreignField: "employeeId",
+                        as: "resultDetails",
+                    },
                 },
-            },
-            {
-                $match: {
-                    "resultDetails.subPolicyId": new mongoose.Types.ObjectId(payload.subPolicyId),
+                {
+                    $match: {
+                        "resultDetails.subPolicyId": new mongoose.Types.ObjectId(payload.subPolicyId),
+                    },
                 },
-            },
-            { $unwind: "$resultDetails" }, // Flatten the resultDetails array
-            { $sort: { "resultDetails._id" : -1 } },
-            {
-                $group: {
-                    _id: "$_id",
-                    firstName: { $first: "$firstName" },
-                    middleName: { $first: "$middleName" },
-                    lastName: { $first: "$lastName" },
-                    resultDetails: { $push: '$resultDetails' },
+                { $unwind: "$resultDetails" }, // Flatten the resultDetails array
+                { $sort: { "resultDetails._id" : -1 } },
+                {
+                    $group: {
+                        _id: "$_id",
+                        firstName: { $first: "$firstName" },
+                        middleName: { $first: "$middleName" },
+                        lastName: { $first: "$lastName" },
+                        resultDetails: { $push: '$resultDetails' },
+                    },
                 },
-            },
-            { $sort: empSort },
-        ];
-        return await this.employeeModel.aggregate(empPipeline);
-
+                { $sort: empSort },
+            ];
+            
+            return await this.employeeModel.aggregate(empPipeline);
         } else {
-        const empPipeline: PipelineStage[] = [
-            { $match: empMatchQuery },
-            {
-                $project: {
-                    _id: 1,
-                    firstName: 1,
-                    middleName: 1,
-                    lastName: 1,
+        
+            const empPipeline: PipelineStage[] = [
+                { $match: empMatchQuery },
+                {
+                    $project: {
+                        _id: 1,
+                        firstName: 1,
+                        middleName: 1,
+                        lastName: 1,
+                    },
                 },
-            },
-            { $sort: empSort },
-        ];
-                return await this.employeeModel.aggregate(empPipeline);
-        }
+                { $sort: empSort },
+            ];
 
+            return await this.employeeModel.aggregate(empPipeline);
+        
+        }
     }
 }
