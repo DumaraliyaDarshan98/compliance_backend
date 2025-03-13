@@ -16,7 +16,7 @@ export class EmployeeService {
     private readonly mailService: MailerService
   ) {}
 
-  async createEmployee(img: Express.Multer.File, body: any): Promise<APIResponseInterface<any>> {
+  async createEmployee(img: any, body: any): Promise<APIResponseInterface<any>> {
     const employeeDto = typeof body.data === 'string' ? JSON.parse(body.data) : body.data;
     const { password, profileImg, ...rest } = employeeDto;
 
@@ -171,7 +171,7 @@ export class EmployeeService {
     }
   }
 
-  async updateEmployee(body: any, img?: Express.Multer.File): Promise<APIResponseInterface<any>> {
+  async updateEmployee(body: any, img?: any): Promise<APIResponseInterface<any>> {
     const employeeDto = typeof body.data === 'string' ? JSON.parse(body.data) : body.data;
     const { password, profileImg, ...rest } = employeeDto;
 
