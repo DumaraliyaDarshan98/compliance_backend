@@ -56,6 +56,7 @@ export class PolicySettingService {
                 existingPolicy.maximumQuestions = payload.maximumQuestions || existingPolicy.maximumQuestions;
                 existingPolicy.timeLimit = payload.timeLimit || existingPolicy.timeLimit;
                 existingPolicy.PassingScore = payload.PassingScore || existingPolicy.PassingScore;
+                existingPolicy.dueDate = payload.dueDate || existingPolicy.dueDate;
 
                 savedPolicySetting = await existingPolicy.save();
             } else {
@@ -72,6 +73,7 @@ export class PolicySettingService {
                     { field: "maximumQuestions", message: "Max Questions is required" },
                     { field: "timeLimit", message: "Time limit is required" },
                     { field: "PassingScore", message: "Passing Score is required" },
+                    { field: "duedate", message: "Due Date is required" },
                 ];
 
                 for (const { field, message } of requiredFields) {
