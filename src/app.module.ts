@@ -13,6 +13,7 @@ import { PolicySettingModule } from './modules/policy-setting/policy-setting.mod
 import { QuestionModule } from './modules/question/question.module';
 import { AnswerModule } from './modules/answer/answer.module';
 import { ResultModule } from './modules/result/result.module';
+import { PolicyDueDateModule } from './modules/policy-due-date/policy-due-date.module';
 
 @Module({
   imports: [
@@ -23,7 +24,8 @@ import { ResultModule } from './modules/result/result.module';
     PolicySettingModule,
     QuestionModule,
     AnswerModule,
-    ResultModule
+    ResultModule,
+    PolicyDueDateModule
   ],
   controllers: [AppController],
   providers: [
