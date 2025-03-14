@@ -13,7 +13,7 @@ export class EmployeeController {
 
     @Post()
     @UseInterceptors(FileInterceptor('img', { storage : profileConfig }))
-    async create( @UploadedFile() img: Express.Multer.File, @Body() body: any): Promise<APIResponseInterface<any>> {
+    async create( @UploadedFile() img: any, @Body() body: any): Promise<APIResponseInterface<any>> {
         return await this.employeeService.createEmployee(img, body);
     }
 
@@ -38,7 +38,7 @@ export class EmployeeController {
     @UseInterceptors(FileInterceptor('img', { storage : profileConfig }))
     async updateEmployee(    
         @Body() body: any, 
-        @UploadedFile() img: Express.Multer.File,  
+        @UploadedFile() img: any,  
     ) : Promise<APIResponseInterface<any>> {
         return await this.employeeService.updateEmployee(body, img);
     }
