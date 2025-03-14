@@ -180,14 +180,17 @@ export class QuestionService {
                 {
                     $sort : sortOptions,
                 },
-                {
-                    $skip: pageOffset,
-                },
-                {
-                    $limit: pageLimit,
-                }
             ];
 
+            var countResult = await this.questionModel.aggregate(pipeline);
+
+            pipeline.push({
+                    $skip: pageOffset
+                }, 
+                {
+                    $limit: pageLimit
+                } 
+            );
 
             var selectedQuestions = await this.questionModel.aggregate(pipeline);
 
@@ -224,7 +227,7 @@ export class QuestionService {
                 message: "Question list.",
                 data: {
                     questionList: selectedQuestions,
-                    count: selectedQuestions.length,
+                    count: countResult.length,
                     pageNumber: pageNumber,
                     pageLimit: pageLimit
                 },

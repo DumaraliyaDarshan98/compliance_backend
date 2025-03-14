@@ -135,6 +135,9 @@ export class SubPolicyService {
                 });
             }
 
+            const countResult = await this.subPolicyModel.aggregate(pipeline);
+            const totalCount = countResult.length;
+
             // Pagination
             const pageNumber = payload.pageNumber || 1;
             const pageLimit = payload.pageLimit || 10;
@@ -157,13 +160,14 @@ export class SubPolicyService {
                     message: "Sub Policy list not found."
                 }
             }
+            console.log(totalCount);
 
             return {
                 code: HttpStatus.OK,
                 message: "Sub policy list.",
                 data: {
                     subPolicyList: subPolicyList,
-                    count: subPolicyList.length,
+                    count: totalCount,
                     pageNumber: pageNumber,
                     pageLimit: pageLimit
                 },

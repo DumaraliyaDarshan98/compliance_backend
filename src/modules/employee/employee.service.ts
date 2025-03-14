@@ -104,6 +104,8 @@ export class EmployeeService {
       const pageLimit = payload.pageLimit || 10;
       const pageOffset = (pageNumber - 1) * pageLimit;
 
+      const totalCount = await this.employeeModel.countDocuments(query).exec();
+
       const employeeList = await this.employeeModel.find(query)
         .sort(sortOptions)
         .skip(pageOffset)
@@ -120,7 +122,7 @@ export class EmployeeService {
       return {
         data: {
           employeeList: employeeList,
-          count: employeeList.length,
+          count: totalCount,
           pageNumber: pageNumber,
           pageLimit: pageLimit
         }

@@ -57,6 +57,20 @@ export class PolicyService {
             var pageLimit = payload.pageLimit || 10;
             const pageOffset = (pageNumber - 1) * pageLimit;
 
+            const countPipeline = [
+                {
+                    $match: matchQuery, // Apply filter criteria
+                },
+                {
+                    $count: 'totalCount', // Count the number of matching documents
+                }
+            ];
+
+            // Get the count of the total records
+            const countResult = await this.policyModel.aggregate(countPipeline);
+            const totalCount = countResult.length > 0 ? countResult[0].totalCount : 0;
+
+
             const pipeline: PipelineStage[] = [
                 {
                     $match: matchQuery, // Apply filter criteria
@@ -124,7 +138,7 @@ export class PolicyService {
                 message: "Policy list.",
                 data: {
                     policyList : policyList,
-                    count : policyList.length,
+                    count : totalCount,
                     pageNumber : pageNumber,
                     pageLimit: pageLimit
                 },

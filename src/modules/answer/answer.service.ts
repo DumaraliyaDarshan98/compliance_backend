@@ -175,14 +175,18 @@ export class AnswerService {
                     },
                     {
                         $sort : sortOptions,
-                    },
-                    {
-                        $skip: pageOffset,
-                    },
-                    {
-                        $limit: pageLimit,
-                    },
+                    }
                ];
+
+            var countResult = await this.answerModel.aggregate(pipeline);
+
+            pipeline.push({
+                    $skip: pageOffset
+                }, 
+                {
+                    $limit: pageLimit
+                } 
+            );
 
             var data = await this.answerModel.aggregate(pipeline);
             
@@ -198,7 +202,7 @@ export class AnswerService {
                 message: "Question list successfully",
                 data: {
                     answerList : data,
-                    count : data.length,
+                    count : countResult.length,
                     pageNumber : pageNumber,
                     pageLimit: pageLimit
                 },

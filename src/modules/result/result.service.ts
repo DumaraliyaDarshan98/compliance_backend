@@ -109,14 +109,18 @@ export class ResultService {
                 },
                 {
                     $sort : sortOptions,
-                },
-                {
-                    $skip: pageOffset,
-                },
-                {
-                    $limit: pageLimit,
                 }
             ];
+
+            const countResult = await this.subPolicyModel.aggregate(pipeline);
+
+            pipeline.push({
+                    $skip: pageOffset
+                }, 
+                {
+                    $limit: pageLimit
+                } 
+            );
 
             const result = await this.subPolicyModel.aggregate(pipeline);
 
@@ -132,7 +136,7 @@ export class ResultService {
                 message: "Result list",
                 data: {
                     subPolicyList: result,
-                    count: result.length,
+                    count: countResult.length,
                     pageNumber: pageNumber,
                     pageLimit: pageLimit
                 },
@@ -238,14 +242,18 @@ export class ResultService {
                 },
                 {
                     $sort : sortOptions,
-                },
-                {
-                    $skip: pageOffset,
-                },
-                {
-                    $limit: pageLimit,
                 }
             ];
+
+            const countResult = await this.subPolicyModel.aggregate(pipeline);
+
+            pipeline.push({
+                    $skip: pageOffset
+                }, 
+                {
+                    $limit: pageLimit
+                } 
+            );
 
             const result = await this.subPolicyModel.aggregate(pipeline);
 
@@ -261,7 +269,7 @@ export class ResultService {
                 message: "Result list successfully",
                 data: {
                     subPolicyList: result,
-                    count: result.length,
+                    count: countResult.length,
                     pageNumber: pageNumber,
                     pageLimit: pageLimit
                 },
@@ -294,20 +302,24 @@ export class ResultService {
             payload.listType = 1;
             const empCompletedList = await this.getAdminEmployeeList('EMPLOYEE', payload);
             const lineManagerCompletedlist = await this.getAdminEmployeeList('LINE_MANAGER', payload);
-            const completedCount = empCompletedList.length + lineManagerCompletedlist.length;
+            const completedCount = empCompletedList.count + lineManagerCompletedlist.count;
 
             payload.listType = 2;
             const empOutStadingList = await this.getAdminEmployeeList('EMPLOYEE', payload);
-           const lineManagerOutStadinglist = await this.getAdminEmployeeList('LINE_MANAGER', payload);
-            const OutStadingCount = empOutStadingList.length + lineManagerOutStadinglist.length;
+            const lineManagerOutStadinglist = await this.getAdminEmployeeList('LINE_MANAGER', payload);
+            const OutStadingCount = empOutStadingList.count + lineManagerOutStadinglist.count;
 
             const data = {
                 completedCount: completedCount,
-                empCompletedList: empCompletedList,
-                lineManagerCompletedlist: lineManagerCompletedlist,
+                empCompletedCount : empCompletedList.count,
+                empCompletedList: empCompletedList.result,
+                lineManagerCompletedCount: lineManagerCompletedlist.count,
+                lineManagerCompletedlist: lineManagerCompletedlist.result,
                 OutStadingCount:OutStadingCount,
-                empOutStadingList:empOutStadingList,
-                lineManagerOutStadinglist:lineManagerOutStadinglist
+                empOutStadingCount:empOutStadingList.count,
+                empOutStadingList:empOutStadingList.result,
+                lineManagerOutStadingCount:lineManagerOutStadinglist.count,
+                lineManagerOutStadinglist:lineManagerOutStadinglist.result
             };
 
             return {
@@ -361,20 +373,22 @@ export class ResultService {
             empMatchQuery.lastName = { $regex: new RegExp(payload?.searchTest, 'i') };
         }
 
-        const empSort: any = {};
-        if (payload?.orderBy) {
-            if (payload?.orderBy.name) {
-                empSort['name'] = parseInt(payload?.orderBy.name, 10);
-            } else if (payload?.orderBy.result) {
-                empSort['resultDetails._id'] = parseInt(payload?.orderBy.result, 10);
-            }
+        let sortOptions = {};
+        if (payload.sortBy && payload.sortOrder) {
+            sortOptions[payload.sortBy] = payload.sortOrder === "asc" ? 1 : -1; // Ascending or descending
         } else {
-            empSort['_id'] = -1;
+            sortOptions['_id'] = -1;
         }
 
+        var pageNumber = payload.pageNumber || 1;
+        var pageLimit = payload.pageLimit || 10;
+        const pageOffset = (pageNumber - 1) * pageLimit; // Calculate the offset
+
+        const empPipeline: PipelineStage[] = [];
         if(payload.listType == 1) {
-            const empPipeline: PipelineStage[] = [
-                { $match: empMatchQuery },
+            empPipeline.push({ 
+                $match: empMatchQuery 
+                },
                 {
                     $project: {
                         _id: 1,
@@ -407,13 +421,12 @@ export class ResultService {
                         resultDetails: { $push: '$resultDetails' },
                     },
                 },
-                { $sort: empSort },
-            ];
-            
-            return await this.employeeModel.aggregate(empPipeline);
+                { $sort: sortOptions },
+            );
+
         } else {
         
-            const empPipeline: PipelineStage[] = [
+            empPipeline.push(
                 { $match: empMatchQuery },
                 {
                     $project: {
@@ -423,11 +436,21 @@ export class ResultService {
                         lastName: 1,
                     },
                 },
-                { $sort: empSort },
-            ];
-
-            return await this.employeeModel.aggregate(empPipeline);
-        
+                { $sort: sortOptions },
+            );
         }
+
+        var countResult = await this.employeeModel.aggregate(empPipeline);
+
+            empPipeline.push({
+                    $skip: pageOffset
+                }, 
+                {
+                    $limit: pageLimit
+                } 
+            );
+            
+        var result = await this.employeeModel.aggregate(empPipeline);
+        return { count : countResult.length, result: result};
     }
 }
