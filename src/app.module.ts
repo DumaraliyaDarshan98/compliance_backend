@@ -14,6 +14,8 @@ import { QuestionModule } from './modules/question/question.module';
 import { AnswerModule } from './modules/answer/answer.module';
 import { ResultModule } from './modules/result/result.module';
 import { PolicyDueDateModule } from './modules/policy-due-date/policy-due-date.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 
 @Module({
   imports: [
@@ -25,7 +27,11 @@ import { PolicyDueDateModule } from './modules/policy-due-date/policy-due-date.m
     QuestionModule,
     AnswerModule,
     ResultModule,
-    PolicyDueDateModule
+    PolicyDueDateModule,
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'uploads'), // Adjust if needed
+      serveRoot: '/uploads', // This will expose files under /uploads
+    }),
   ],
   controllers: [AppController],
   providers: [

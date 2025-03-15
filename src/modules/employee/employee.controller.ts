@@ -12,9 +12,19 @@ export class EmployeeController {
     constructor(private readonly employeeService: EmployeeService) { }
 
     @Post()
-    @UseInterceptors(FileInterceptor('img', { storage : profileConfig }))
-    async create( @UploadedFile() img: any, @Body() body: any): Promise<APIResponseInterface<any>> {
-        return await this.employeeService.createEmployee(img, body);
+    @UseInterceptors(FileInterceptor('img', { storage: profileConfig }))
+    async create(
+        @UploadedFile() img: any,
+        @Body() body: any
+    ): Promise<APIResponseInterface<any>> {
+        return await this.employeeService.createEmployee(body, img);
+    }
+
+    @Post('bulk-upload')
+    async bulkCreate(
+        @Body() body: any
+    ): Promise<APIResponseInterface<any>> {
+        return await this.employeeService.bulkCreate(body);
     }
 
     @Post('list')
@@ -35,11 +45,11 @@ export class EmployeeController {
     }
 
     @Post('update')
-    @UseInterceptors(FileInterceptor('img', { storage : profileConfig }))
-    async updateEmployee(    
-        @Body() body: any, 
-        @UploadedFile() img: any,  
-    ) : Promise<APIResponseInterface<any>> {
+    @UseInterceptors(FileInterceptor('img', { storage: profileConfig }))
+    async updateEmployee(
+        @Body() body: any,
+        @UploadedFile() img: any,
+    ): Promise<APIResponseInterface<any>> {
         return await this.employeeService.updateEmployee(body, img);
     }
 

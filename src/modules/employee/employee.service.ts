@@ -14,9 +14,9 @@ export class EmployeeService {
   constructor(
     @InjectModel(Employee.name) private readonly employeeModel: Model<EmployeeDocument>,
     private readonly mailService: MailerService
-  ) {}
+  ) { }
 
-  async createEmployee(img: any, body: any): Promise<APIResponseInterface<any>> {
+  async createEmployee(body: any, img?: any): Promise<APIResponseInterface<any>> {
     const employeeDto = typeof body.data === 'string' ? JSON.parse(body.data) : body.data;
     const { password, profileImg, ...rest } = employeeDto;
 
@@ -29,10 +29,19 @@ export class EmployeeService {
       throw new BadRequestException(`Email Already Exists`);
     }
 
-    const employee = new this.employeeModel({ ...rest, profileImg: '/uploads/profile/' + img.filename });
+    const payload = { ...rest }
+    if (img) {
+      payload['profileImg'] = '/uploads/profile/' + img.filename
+    }
+
+    const employee = new this.employeeModel();
 
     try {
       const data = await employee.save();
+      
+      const resetUrl = `${CONFIG.frontURL}create-password?token=${employee.email}`;
+      const emailContent = `<p>Click <a href="${resetUrl}">here</a> to set your new password.</p>`;
+      await this.mailService.sendResetPasswordEmail(employee.email, emailContent, 'Set Your Password');
 
       return { data };
     } catch (error) {
@@ -112,10 +121,10 @@ export class EmployeeService {
         .limit(pageLimit)
         .exec();
 
-      if(employeeList.length <= 0){
+      if (employeeList.length <= 0) {
         return {
-            code :HttpStatus.OK,
-            message : "Employee list not found."
+          code: HttpStatus.OK,
+          message: "Employee list not found."
         }
       }
 
