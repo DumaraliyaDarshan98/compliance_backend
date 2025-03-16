@@ -28,11 +28,11 @@ import * as mongoose from 'mongoose';
 @Injectable()
 export class SubPolicyService {
     constructor(
-        @InjectModel(PolicySetting.name) private readonly policySettingModel: Model < PolicySettingDocument > ,
-        @InjectModel(SubPolicy.name) private readonly subPolicyModel: Model < SubPolicyDocument > ,
-    ) {}
+        @InjectModel(PolicySetting.name) private readonly policySettingModel: Model<PolicySettingDocument>,
+        @InjectModel(SubPolicy.name) private readonly subPolicyModel: Model<SubPolicyDocument>,
+    ) { }
 
-    async getAllSubPolicy(payload: any): Promise < APIResponseInterface < any >> {
+    async getAllSubPolicy(payload: any): Promise<APIResponseInterface<any>> {
         try {
 
             if (!payload?.policyId) {
@@ -60,42 +60,42 @@ export class SubPolicyService {
 
                 matchQuery.$and.push({
                     $or: [{
-                            name: {
-                                $regex: payload.searchText,
-                                $options: 'i'
-                            }
-                        },
-                        {
-                            description: {
-                                $regex: payload.searchText,
-                                $options: 'i'
-                            }
+                        name: {
+                            $regex: payload.searchText,
+                            $options: 'i'
                         }
+                    },
+                    {
+                        description: {
+                            $regex: payload.searchText,
+                            $options: 'i'
+                        }
+                    }
                     ]
                 });
             }
 
             const pipeline: PipelineStage[] = [{
-                    $match: matchQuery, // Apply filter criteria
+                $match: matchQuery, // Apply filter criteria
+            },
+            {
+                $project: {
+                    _id: 1,
+                    policyId: 1,
+                    name: 1,
+                    version: 1,
+                    description: 1,
+                    createdAt: 1
                 },
-                {
-                    $project: {
-                        _id: 1,
-                        policyId: 1,
-                        name: 1,
-                        version: 1,
-                        description: 1,
-                        createdAt: 1
-                    },
+            },
+            {
+                $lookup: {
+                    from: 'policy_settings', // Reference to policy settings collection
+                    localField: '_id', // Field from subPolicy
+                    foreignField: 'subPolicyId', // Field from policy_settings
+                    as: 'policySettings', // Output array of policySettings
                 },
-                {
-                    $lookup: {
-                        from: 'policy_settings', // Reference to policy settings collection
-                        localField: '_id', // Field from subPolicy
-                        foreignField: 'subPolicyId', // Field from policy_settings
-                        as: 'policySettings', // Output array of policySettings
-                    },
-                }
+            }
             ];
 
             // If it's a frontend request, include policy settings with additional filters
@@ -144,11 +144,11 @@ export class SubPolicyService {
             const pageOffset = (pageNumber - 1) * pageLimit; // Calculate the offset
 
             pipeline.push({
-                    $skip: pageOffset
-                }, 
+                $skip: pageOffset
+            },
                 {
                     $limit: pageLimit
-                } 
+                }
             );
 
             // Execute aggregation pipeline
@@ -182,7 +182,7 @@ export class SubPolicyService {
         }
     }
 
-    async createSubPolicy(payload: any): Promise < APIResponseInterface < any >> {
+    async createSubPolicy(payload: any): Promise<APIResponseInterface<any>> {
         try {
             // Validate required fields
             if (!payload?.name) {
@@ -235,7 +235,77 @@ export class SubPolicyService {
         }
     }
 
-    async deleteById(payload: any): Promise < APIResponseInterface < any >> {
+    async updateSubPolicy(id: string, payload: any): Promise<APIResponseInterface<any>> {
+        try {
+            if (!id) {
+                return {
+                    code: HttpStatus.BAD_REQUEST,
+                    message: 'Sub Policy ID is required',
+                };
+            }
+
+            // Validate required fields
+            if (!payload?.name) {
+                return {
+                    code: HttpStatus.BAD_REQUEST,
+                    message: 'Sub Policy name is required',
+                };
+            }
+
+            if (!payload?.version) {
+                return {
+                    code: HttpStatus.BAD_REQUEST,
+                    message: 'Sub Policy version is required',
+                };
+            }
+
+            if (!payload?.policyId) {
+                return {
+                    code: HttpStatus.BAD_REQUEST,
+                    message: 'Policy Id is required',
+                };
+            }
+
+            // Check if Sub Policy exists
+            const existingSubPolicy = await this.subPolicyModel.findById(id).exec();
+            if (!existingSubPolicy) {
+                return {
+                    code: HttpStatus.NOT_FOUND,
+                    message: 'Sub Policy not found',
+                };
+            }
+
+            // Check if another Sub Policy with same name and version exists
+            const duplicateSubPolicy = await this.subPolicyModel.findOne({
+                _id: { $ne: id },
+                name: payload?.name,
+                version: payload?.version,
+            }).exec();
+
+            if (duplicateSubPolicy) {
+                return {
+                    code: HttpStatus.BAD_REQUEST,
+                    message: 'Another Sub Policy with the same name and version already exists',
+                };
+            }
+
+            // Update and save
+            Object.assign(existingSubPolicy, payload);
+            const updatedSubPolicy = await existingSubPolicy.save();
+
+            return {
+                data: updatedSubPolicy,
+            };
+        } catch (error) {
+            console.error('Error updateSubPolicy:', error);
+            return {
+                code: HttpStatus.INTERNAL_SERVER_ERROR,
+                message: error.message,
+            };
+        }
+    }
+
+    async deleteById(payload: any): Promise<APIResponseInterface<any>> {
         try {
             // Validate if id is provided
             if (!payload?.id) {
@@ -267,7 +337,7 @@ export class SubPolicyService {
         }
     }
 
-    async findById(payload: any): Promise < APIResponseInterface < SubPolicy >> {
+    async findById(payload: any): Promise<APIResponseInterface<SubPolicy>> {
         try {
             // Validate if id is provided
             if (!payload?.id) {

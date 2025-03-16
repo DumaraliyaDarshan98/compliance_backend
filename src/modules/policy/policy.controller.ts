@@ -20,6 +20,11 @@ export class PolicyController {
         return await this.policyService.createPolicy(policyPayload);
     }
 
+    @Post('update/:id')
+    async updatePolicy(@Param('id') id: string, @Body() policyPayload: any): Promise<APIResponseInterface<any>> {
+        return await this.policyService.updatePolicy(id, policyPayload);
+    }
+
     @Delete(':id')
     async deleteById(@Param('id') id: string) {
         return this.policyService.deleteById(id);

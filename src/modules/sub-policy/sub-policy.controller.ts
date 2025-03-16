@@ -21,6 +21,11 @@ export class SubPolicyController {
         return await this.subPolicyService.createSubPolicy(subPolicyPayload);
     }
 
+    @Post('update/:id')
+    async updateSubPolicy(@Param('id') id: string , @Body() subPolicyPayload: any): Promise<APIResponseInterface<any>> {
+        return await this.subPolicyService.updateSubPolicy(id, subPolicyPayload);
+    }
+
     @Post('/delete')
     async deleteById(@Body() subPolicyPayload: any) {
         return this.subPolicyService.deleteById(subPolicyPayload);

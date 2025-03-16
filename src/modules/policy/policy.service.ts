@@ -31,18 +31,18 @@ export class PolicyService {
             let matchQuery: any = {};
 
             if (payload?.isActive !== undefined) {
-                matchQuery.isActive = payload?.isActive; 
+                matchQuery.isActive = payload?.isActive;
             }
 
             if (payload.searchText && payload.searchText.trim() !== "") {
                 if (!matchQuery.$and) {
-                    matchQuery.$and = []; 
+                    matchQuery.$and = [];
                 }
 
                 matchQuery.$and.push({
                     $or: [
-                        { name: { $regex: payload.searchText, $options: 'i' } }, 
-                        { description: { $regex: payload.searchText, $options: 'i' } }                      ]
+                        { name: { $regex: payload.searchText, $options: 'i' } },
+                        { description: { $regex: payload.searchText, $options: 'i' } }]
                 });
             }
 
@@ -114,7 +114,7 @@ export class PolicyService {
                     },
                 },
                 {
-                    $sort : sortOptions,
+                    $sort: sortOptions,
                 },
                 {
                     $skip: pageOffset,
@@ -126,10 +126,10 @@ export class PolicyService {
 
             const policyList = await this.policyModel.aggregate(pipeline);
 
-            if(policyList.length <= 0){
+            if (policyList.length <= 0) {
                 return {
-                    code :HttpStatus.OK,
-                    message : "Policy list not found."
+                    code: HttpStatus.OK,
+                    message: "Policy list not found."
                 }
             }
 
@@ -137,9 +137,9 @@ export class PolicyService {
                 code: HttpStatus.OK,
                 message: "Policy list.",
                 data: {
-                    policyList : policyList,
-                    count : totalCount,
-                    pageNumber : pageNumber,
+                    policyList: policyList,
+                    count: totalCount,
+                    pageNumber: pageNumber,
                     pageLimit: pageLimit
                 },
             };
@@ -205,6 +205,81 @@ export class PolicyService {
             throw new InternalServerErrorException("Failed to create policy");
         }
     }
+
+    async updatePolicy(id: string, payload: any): Promise<APIResponseInterface<any>> {
+        try {
+            if (!id) {
+                return {
+                    code: HttpStatus.BAD_REQUEST,
+                    message: "Policy ID is required",
+                };
+            }
+
+            if (!payload?.name) {
+                return {
+                    code: HttpStatus.BAD_REQUEST,
+                    message: "Policy name is required",
+                };
+            }
+
+            if (!payload?.version) {
+                return {
+                    code: HttpStatus.BAD_REQUEST,
+                    message: "Policy version is required",
+                };
+            }
+
+            if (!payload?.userGroup) {
+                return {
+                    code: HttpStatus.BAD_REQUEST,
+                    message: "Policy user group is required",
+                };
+            }
+
+            if (!payload?.policyType) {
+                return {
+                    code: HttpStatus.BAD_REQUEST,
+                    message: "Policy policy type is required",
+                };
+            }
+
+            // Check if policy exists
+            const existingPolicy = await this.policyModel.findById(id).exec();
+            if (!existingPolicy) {
+                return {
+                    code: HttpStatus.NOT_FOUND,
+                    message: "Policy not found",
+                };
+            }
+
+            // Check for uniqueness: same name and version in another policy
+            const duplicatePolicy = await this.policyModel.findOne({
+                _id: { $ne: id }, // Exclude current policy
+                name: payload?.name,
+                version: payload?.version,
+            }).exec();
+
+            if (duplicatePolicy) {
+                return {
+                    code: HttpStatus.BAD_REQUEST,
+                    message: "Another policy with the same name and version already exists",
+                };
+            }
+
+            // Update fields
+            Object.assign(existingPolicy, payload);
+
+            const updatedPolicy = await existingPolicy.save();
+
+            return {
+                data: updatedPolicy,
+            };
+        } catch (error) {
+            console.error("Error updatePolicy:", error);
+            throw new InternalServerErrorException("Failed to update policy");
+        }
+    }
+
 
     async deleteById(id: string): Promise<APIResponseInterface<any>> {
         try {
