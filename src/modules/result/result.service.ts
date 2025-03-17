@@ -229,6 +229,20 @@ export class ResultService {
                     },
                 },
                 {
+                    $lookup: {
+                        from: "policy_due_dates",
+                        localField: "_id",
+                        foreignField: "subPolicyId",
+                        as: "policyDueDate",
+                    },
+                },
+                {
+                    // Filter for cases where resultDetails does not contain the employeeId
+                    $match: {
+                        "policyDueDate.employeeId": new mongoose.Types.ObjectId(payload.employeeId),
+                    },
+                },
+                {
                     $group: {
                         _id: "$_id",
                         policyId: { $first: "$policyId" },
@@ -237,7 +251,8 @@ export class ResultService {
                         description: { $first: "$description" },
                         createdAt: { $first: "$createdAt" },
                         policySettingDetails: { $first: "$policySettingDetails" },
-                        resultDetails: { $push: "$resultDetails" }, // Reassemble the resultDetails array
+                        resultDetails: { $push: "$resultDetails" }, 
+                        policyDueDate: { $push: "$policyDueDate" },
                     },
                 },
                 {
