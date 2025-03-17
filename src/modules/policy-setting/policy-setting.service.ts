@@ -73,7 +73,7 @@ export class PolicySettingService {
                     { field: "maximumQuestions", message: "Max Questions is required" },
                     { field: "timeLimit", message: "Time limit is required" },
                     { field: "PassingScore", message: "Passing Score is required" },
-                    { field: "duedate", message: "Due Date is required" },
+                    { field: "dueDate", message: "Due Date is required" },
                 ];
 
                 for (const { field, message } of requiredFields) {

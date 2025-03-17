@@ -19,7 +19,7 @@ export class EmployeeService {
   async createEmployee(body: any, img?: any): Promise<APIResponseInterface<any>> {
     const employeeDto = typeof body.data === 'string' ? JSON.parse(body.data) : body.data;
     const { password, profileImg, ...rest } = employeeDto;
-
+    console.log("employeeDto", employeeDto);
     if (!employeeDto?.email) {
       throw new BadRequestException(`Please enter your email address`);
     }
@@ -34,7 +34,7 @@ export class EmployeeService {
       payload['profileImg'] = '/uploads/profile/' + img.filename
     }
 
-    const employee = new this.employeeModel();
+    const employee = new this.employeeModel(payload);
 
     try {
       const data = await employee.save();

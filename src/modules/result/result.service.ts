@@ -22,7 +22,7 @@ export class ResultService {
         @InjectModel(Employee.name) private readonly employeeModel: Model<EmployeeDocument>,
         @InjectModel(SubPolicy.name) private readonly subPolicyModel: Model<SubPolicyDocument>,
         @InjectModel(Result.name) private readonly resultModel: Model<ResultDocument>,
-    ) {}
+    ) { }
 
     // Method to get list of results
     async getList(payload: any): Promise<APIResponseInterface<any>> {
@@ -108,18 +108,18 @@ export class ResultService {
                     },
                 },
                 {
-                    $sort : sortOptions,
+                    $sort: sortOptions,
                 }
             ];
 
             const countResult = await this.subPolicyModel.aggregate(pipeline);
 
             pipeline.push({
-                    $skip: pageOffset
-                }, 
+                $skip: pageOffset
+            },
                 {
                     $limit: pageLimit
-                } 
+                }
             );
 
             const result = await this.subPolicyModel.aggregate(pipeline);
@@ -239,7 +239,7 @@ export class ResultService {
                 {
                     // Filter for cases where resultDetails does not contain the employeeId
                     $match: {
-                        "policyDueDate.employeeId": new mongoose.Types.ObjectId(payload.employeeId),
+                        "policyDueDate.employeeId": { $ne: new mongoose.Types.ObjectId(payload.employeeId) },
                     },
                 },
                 {
@@ -251,30 +251,30 @@ export class ResultService {
                         description: { $first: "$description" },
                         createdAt: { $first: "$createdAt" },
                         policySettingDetails: { $first: "$policySettingDetails" },
-                        resultDetails: { $push: "$resultDetails" }, 
+                        resultDetails: { $push: "$resultDetails" },
                         policyDueDate: { $push: "$policyDueDate" },
                     },
                 },
                 {
-                    $sort : sortOptions,
+                    $sort: sortOptions,
                 }
             ];
 
             const countResult = await this.subPolicyModel.aggregate(pipeline);
-
+            console.log("countResult", countResult);
             pipeline.push({
-                    $skip: pageOffset
-                }, 
+                $skip: pageOffset
+            },
                 {
                     $limit: pageLimit
-                } 
+                }
             );
 
             const result = await this.subPolicyModel.aggregate(pipeline);
 
             if (result.length === 0) {
                 return {
-                    code: HttpStatus.NOT_FOUND,
+                    code: HttpStatus.OK,
                     message: 'Not Found',
                 };
             }
@@ -326,15 +326,15 @@ export class ResultService {
 
             const data = {
                 completedCount: completedCount,
-                empCompletedCount : empCompletedList.count,
+                empCompletedCount: empCompletedList.count,
                 empCompletedList: empCompletedList.result,
                 lineManagerCompletedCount: lineManagerCompletedlist.count,
                 lineManagerCompletedlist: lineManagerCompletedlist.result,
-                OutStadingCount:OutStadingCount,
-                empOutStadingCount:empOutStadingList.count,
-                empOutStadingList:empOutStadingList.result,
-                lineManagerOutStadingCount:lineManagerOutStadinglist.count,
-                lineManagerOutStadinglist:lineManagerOutStadinglist.result
+                OutStadingCount: OutStadingCount,
+                empOutStadingCount: empOutStadingList.count,
+                empOutStadingList: empOutStadingList.result,
+                lineManagerOutStadingCount: lineManagerOutStadinglist.count,
+                lineManagerOutStadinglist: lineManagerOutStadinglist.result
             };
 
             return {
@@ -367,7 +367,7 @@ export class ResultService {
         const array = await this.resultModel.aggregate(pipeline);
 
         const ids = array.map((doc: any) => new mongoose.Types.ObjectId(doc._id));
-        
+
         let empMatchQuery: any = {};
         if (payload.listType === 1) {
             empMatchQuery._id = { $in: ids };
@@ -400,10 +400,10 @@ export class ResultService {
         const pageOffset = (pageNumber - 1) * pageLimit; // Calculate the offset
 
         const empPipeline: PipelineStage[] = [];
-        if(payload.listType == 1) {
-            empPipeline.push({ 
-                $match: empMatchQuery 
-                },
+        if (payload.listType == 1) {
+            empPipeline.push({
+                $match: empMatchQuery
+            },
                 {
                     $project: {
                         _id: 1,
@@ -426,7 +426,7 @@ export class ResultService {
                     },
                 },
                 { $unwind: "$resultDetails" }, // Flatten the resultDetails array
-                { $sort: { "resultDetails._id" : -1 } },
+                { $sort: { "resultDetails._id": -1 } },
                 {
                     $group: {
                         _id: "$_id",
@@ -440,7 +440,7 @@ export class ResultService {
             );
 
         } else {
-        
+
             empPipeline.push(
                 { $match: empMatchQuery },
                 {
@@ -457,15 +457,15 @@ export class ResultService {
 
         var countResult = await this.employeeModel.aggregate(empPipeline);
 
-            empPipeline.push({
-                    $skip: pageOffset
-                }, 
-                {
-                    $limit: pageLimit
-                } 
-            );
-            
+        empPipeline.push({
+            $skip: pageOffset
+        },
+            {
+                $limit: pageLimit
+            }
+        );
+
         var result = await this.employeeModel.aggregate(empPipeline);
-        return { count : countResult.length, result: result};
+        return { count: countResult.length, result: result };
     }
 }

@@ -124,6 +124,7 @@ export class AuthService {
 
       return { message: 'Password updated successfully' };
     } catch (error) {
+      console.log("error", error)
       throw new BadRequestException('Invalid token');
     }
   }
