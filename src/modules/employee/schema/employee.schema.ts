@@ -63,6 +63,9 @@ export class Employee {
 
     @Prop({ required: true, type: Number, enum: [0, 1], default: 1 })
     isActive: 0 | 1;
+
+    @Prop()
+    inactiveReason?: string;
 }
 
 export const EmployeeSchema = SchemaFactory.createForClass(Employee);

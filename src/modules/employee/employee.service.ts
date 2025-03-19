@@ -38,7 +38,7 @@ export class EmployeeService {
 
     try {
       const data = await employee.save();
-      
+
       const resetUrl = `${CONFIG.frontURL}create-password?token=${employee.email}`;
       const emailContent = `<p>Click <a href="${resetUrl}">here</a> to set your new password.</p>`;
       await this.mailService.sendResetPasswordEmail(employee.email, emailContent, 'Set Your Password');
@@ -47,6 +47,32 @@ export class EmployeeService {
     } catch (error) {
       console.log('error', error);
       throw new InternalServerErrorException("Failed to create employee");
+    }
+  }
+
+  async inactiveUser(employeeDto: any): Promise<APIResponseInterface<any>> {
+    try {
+      const { id, reason } = employeeDto;
+
+      if (!id) {
+        throw new BadRequestException(`Employee id required !`);
+      }
+
+      if (!reason) {
+        throw new BadRequestException(`Please enter reason for inactive !`);
+      }
+
+      const employee = await this.employeeModel.findById(id).exec();
+
+      employee['inactiveReason'] = reason || "";
+      employee['isActive'] = 0;
+
+      const data = await employee.save();
+
+      return { data }
+    } catch (error) {
+      console.log('error', error);
+      throw new InternalServerErrorException("Failed to inactive");
     }
   }
 

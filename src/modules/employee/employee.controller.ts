@@ -27,6 +27,13 @@ export class EmployeeController {
         return await this.employeeService.bulkCreate(body);
     }
 
+    @Post('inactive-user')
+    async inactiveUser(
+        @Body() body: any
+    ): Promise<APIResponseInterface<any>> {
+        return await this.employeeService.inactiveUser(body);
+    }
+
     @Post('list')
     async findAll(@Body() employeePayload: any): Promise<APIResponseInterface<any>> {
         return await this.employeeService.getAllEmployee(employeePayload);
