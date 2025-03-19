@@ -66,6 +66,7 @@ export class EmployeeService {
 
       employee['inactiveReason'] = reason || "";
       employee['isActive'] = 0;
+      employee['inactiveDate'] = new Date();
 
       const data = await employee.save();
 

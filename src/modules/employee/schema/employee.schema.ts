@@ -66,6 +66,9 @@ export class Employee {
 
     @Prop()
     inactiveReason?: string;
+
+    @Prop()
+    inactiveDate?: Date;
 }
 
 export const EmployeeSchema = SchemaFactory.createForClass(Employee);
