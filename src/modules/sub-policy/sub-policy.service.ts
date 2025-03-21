@@ -135,6 +135,25 @@ export class SubPolicyService {
                 });
             }
 
+            if (payload?.employeeId) {
+                pipeline.push(
+                    {
+                        $lookup: {
+                            from: 'accepted_terms_conditions',
+                            localField: '_id',
+                            foreignField: 'subPolicyId',
+                            as: 'conditionDetail',
+                        },
+                    },
+                    // Separate $match stage for conditionDetail filtering
+                    {
+                        $match: {
+                            "conditionDetail.employeeId": new mongoose.Types.ObjectId(payload.employeeId),
+                        },
+                    }
+                );
+            }
+
             const countResult = await this.subPolicyModel.aggregate(pipeline);
             const totalCount = countResult.length;
 
@@ -160,7 +179,6 @@ export class SubPolicyService {
                     message: "Sub Policy list not found."
                 }
             }
-            console.log(totalCount);
 
             return {
                 code: HttpStatus.OK,
@@ -347,8 +365,35 @@ export class SubPolicyService {
                 };
             }
 
-            // Find Sub Policy by ID
-            const subPolicyDetails = await this.subPolicyModel.findById(payload?.id).exec();
+            const pipeline = [];
+
+            if (payload?.employeeId) {
+                pipeline.push(
+                    {
+                        $lookup: {
+                            from: 'accepted_terms_conditions',
+                            localField: '_id',
+                            foreignField: 'subPolicyId',
+                            as: 'conditionDetail',
+                        },
+                    },
+                    {
+                        $match: {
+                            "conditionDetail.employeeId": new mongoose.Types.ObjectId(payload.employeeId),
+                        },
+                    }
+                );
+            }
+
+            // Adding the match for sub-policy id to the pipeline
+            pipeline.push({
+                $match: {
+                    _id: new mongoose.Types.ObjectId(payload?.id),
+                },
+            });
+
+            const subPolicyDetails = await this.subPolicyModel.aggregate(pipeline).exec();
+
 
             if (!subPolicyDetails) {
                 return {
