@@ -208,7 +208,7 @@ export class SubPolicyService {
 
             // Check if Sub Policy already exists
             const existingDetails = await this.subPolicyModel.findOne({
-                name: payload?.name,
+                policyId: payload?.policyId,
                 version: payload?.version,
             }).exec();
 
