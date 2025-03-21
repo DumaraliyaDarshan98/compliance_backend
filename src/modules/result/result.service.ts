@@ -15,10 +15,12 @@ import { ANSWER_STATUS } from "src/utils/enums/index.enum";
 import { PolicySetting, PolicySettingDocument } from "src/modules/policy-setting/schema/policy-setting.schema";
 import { Employee, EmployeeDocument } from "src/modules/employee/schema/employee.schema";
 import { Gender, ROLES } from 'src/utils/enums/index.enum';
+import { AcceptTermCondition, AcceptTermConditionDocument } from 'src/modules/accept-term-condition/schema/accept-term-condition.schema';
 
 @Injectable()
 export class ResultService {
     constructor(
+        @InjectModel(AcceptTermCondition.name) private readonly acceptTearmConditionModel: Model<AcceptTermConditionDocument>,
         @InjectModel(Employee.name) private readonly employeeModel: Model<EmployeeDocument>,
         @InjectModel(SubPolicy.name) private readonly subPolicyModel: Model<SubPolicyDocument>,
         @InjectModel(Result.name) private readonly resultModel: Model<ResultDocument>,
@@ -82,6 +84,19 @@ export class ResultService {
                 },
                 {
                     $lookup: {
+                        from: "accepted_terms_conditions",
+                        localField: "_id",
+                        foreignField: "subPolicyId",
+                        as: "conditionDetail",
+                    },
+                },
+                {
+                    $match: {
+                        "conditionDetail.employeeId": new mongoose.Types.ObjectId(payload.employeeId),
+                    },
+                },
+                {
+                    $lookup: {
                         from: "results",
                         localField: "_id",
                         foreignField: "subPolicyId",
@@ -104,7 +119,8 @@ export class ResultService {
                         version: { $first: "$version" },
                         description: { $first: "$description" },
                         policySettingDetails: { $first: "$policySettingDetails" },
-                        resultDetails: { $push: "$resultDetails" }, // Reassemble the resultDetails array
+                        resultDetails: { $push: "$resultDetails" }, 
+                        conditionDetail: { $push: "$conditionDetail" }, 
                     },
                 },
                 {
@@ -212,6 +228,26 @@ export class ResultService {
                 },
                 {
                     $lookup: {
+                        from: "accepted_terms_conditions",
+                        localField: "_id",
+                        foreignField: "subPolicyId",
+                        as: "conditionDetail",
+                    },
+                },
+                {
+                    $unwind: {
+                        path: "$conditionDetail", 
+                        preserveNullAndEmptyArrays: true, 
+                    },
+                },
+
+                {
+                    $match: {
+                        "conditionDetail.employeeId": new mongoose.Types.ObjectId(payload.employeeId),
+                    },
+                },
+                {
+                    $lookup: {
                         from: "results",
                         localField: "_id",
                         foreignField: "subPolicyId",
@@ -237,7 +273,6 @@ export class ResultService {
                     },
                 },
                 {
-                    // Filter for cases where resultDetails does not contain the employeeId
                     $match: {
                         "policyDueDate.employeeId": { $ne: new mongoose.Types.ObjectId(payload.employeeId) },
                     },
@@ -253,6 +288,7 @@ export class ResultService {
                         policySettingDetails: { $first: "$policySettingDetails" },
                         resultDetails: { $push: "$resultDetails" },
                         policyDueDate: { $push: "$policyDueDate" },
+                        conditionDetail: { $push: "$conditionDetail" }, 
                     },
                 },
                 {

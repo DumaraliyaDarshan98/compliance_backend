@@ -6,13 +6,15 @@ import { ResultController } from './result.controller';
 import { SubPolicyModule } from 'src/modules/sub-policy/sub-policy.module'; // Import the SubPolicyModule
 import { PolicySettingModule } from 'src/modules/policy-setting/policy-setting.module'; // Import the SubPolicyModule
 import { EmployeeModule } from 'src/modules/employee/employee.module';
+import { AcceptTermConditionModule } from 'src/modules/accept-term-condition/accept-term-condition.module';
 
 @Module({
     imports: [
         MongooseModule.forFeature([{ name: Result.name, schema: ResultSchema }]),
         SubPolicyModule,
         PolicySettingModule,
-        EmployeeModule
+        EmployeeModule,
+        AcceptTermConditionModule
     ],
     providers: [ResultService],
     controllers: [ResultController],
