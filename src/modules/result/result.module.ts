@@ -7,6 +7,7 @@ import { SubPolicyModule } from 'src/modules/sub-policy/sub-policy.module'; // I
 import { PolicySettingModule } from 'src/modules/policy-setting/policy-setting.module'; // Import the SubPolicyModule
 import { EmployeeModule } from 'src/modules/employee/employee.module';
 import { AcceptTermConditionModule } from 'src/modules/accept-term-condition/accept-term-condition.module';
+import { PolicyModule } from 'src/modules/policy/policy.module'; // Import the SubPolicyModule
 
 @Module({
     imports: [
@@ -14,7 +15,8 @@ import { AcceptTermConditionModule } from 'src/modules/accept-term-condition/acc
         SubPolicyModule,
         PolicySettingModule,
         EmployeeModule,
-        AcceptTermConditionModule
+        AcceptTermConditionModule,
+        PolicyModule
     ],
     providers: [ResultService],
     controllers: [ResultController],

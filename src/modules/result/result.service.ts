@@ -16,10 +16,12 @@ import { PolicySetting, PolicySettingDocument } from "src/modules/policy-setting
 import { Employee, EmployeeDocument } from "src/modules/employee/schema/employee.schema";
 import { Gender, ROLES } from 'src/utils/enums/index.enum';
 import { AcceptTermCondition, AcceptTermConditionDocument } from 'src/modules/accept-term-condition/schema/accept-term-condition.schema';
+import { Policy, PolicyDocument } from "src/modules/policy/schema/policy.schema";
 
 @Injectable()
 export class ResultService {
     constructor(
+        @InjectModel(Policy.name) private readonly policyModel: Model<PolicyDocument>,
         @InjectModel(AcceptTermCondition.name) private readonly acceptTearmConditionModel: Model<AcceptTermConditionDocument>,
         @InjectModel(Employee.name) private readonly employeeModel: Model<EmployeeDocument>,
         @InjectModel(SubPolicy.name) private readonly subPolicyModel: Model<SubPolicyDocument>,
@@ -84,6 +86,14 @@ export class ResultService {
                 },
                 {
                     $lookup: {
+                        from: "policies",
+                        localField: "policyId",
+                        foreignField: "_id",
+                        as: "policyDetail",
+                    },
+                },
+                {
+                    $lookup: {
                         from: "accepted_terms_conditions",
                         localField: "_id",
                         foreignField: "subPolicyId",
@@ -121,6 +131,7 @@ export class ResultService {
                         policySettingDetails: { $first: "$policySettingDetails" },
                         resultDetails: { $push: "$resultDetails" }, 
                         conditionDetail: { $push: "$conditionDetail" }, 
+                        policyDetail: { $push: "$policyDetail" }, 
                     },
                 },
                 {
@@ -228,6 +239,14 @@ export class ResultService {
                 },
                 {
                     $lookup: {
+                        from: "policies",
+                        localField: "policyId",
+                        foreignField: "_id",
+                        as: "policyDetail",
+                    },
+                },
+                {
+                    $lookup: {
                         from: "accepted_terms_conditions",
                         localField: "_id",
                         foreignField: "subPolicyId",
@@ -289,6 +308,7 @@ export class ResultService {
                         resultDetails: { $push: "$resultDetails" },
                         policyDueDate: { $push: "$policyDueDate" },
                         conditionDetail: { $push: "$conditionDetail" }, 
+                        policyDetail: { $push: "$policyDetail" }, 
                     },
                 },
                 {
