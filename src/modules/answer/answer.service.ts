@@ -12,6 +12,7 @@ import { Answer, AnswerDocument } from "./schema/answer.schema";
 import { SubPolicy, SubPolicyDocument } from 'src/modules/sub-policy/schema/sub-policy.schema';
 import { Question, QuestionDocument } from "src/modules/question/schema/question.schema";
 import { Result, ResultDocument } from "src/modules/result/schema/result.schema";
+import { Option, OptionDocument } from 'src/modules/option/schema/option.schema';
 import * as mongoose from 'mongoose';
 
 @Injectable()
@@ -20,6 +21,7 @@ export class AnswerService {
         @InjectModel(Result.name) private readonly resultModel: Model<ResultDocument>,
         @InjectModel(SubPolicy.name) private readonly subPolicyModel: Model<SubPolicyDocument>,
         @InjectModel(Question.name) private readonly questionModel: Model<QuestionDocument>,
+        @InjectModel(Option.name) private readonly optionModel: Model<OptionDocument>,
         @InjectModel(Answer.name) private readonly answerModel: Model<AnswerDocument>,
     ) {}
 
@@ -166,6 +168,14 @@ export class AnswerService {
                               foreignField: "_id",
                               as: "questionDetails",
                          },
+                    },
+                    {
+                        $lookup: {
+                            from: 'options',
+                            localField: '_id',
+                            foreignField: 'questionId',
+                            as: 'optionsDetails',
+                        },
                     },
                     {
                         $unwind: {

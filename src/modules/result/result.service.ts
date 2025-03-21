@@ -261,7 +261,6 @@ export class ResultService {
             ];
 
             const countResult = await this.subPolicyModel.aggregate(pipeline);
-            console.log("countResult", countResult);
             pipeline.push({
                 $skip: pageOffset
             },

@@ -14,6 +14,7 @@ import { QuestionModule } from './modules/question/question.module';
 import { AnswerModule } from './modules/answer/answer.module';
 import { ResultModule } from './modules/result/result.module';
 import { PolicyDueDateModule } from './modules/policy-due-date/policy-due-date.module';
+import { AcceptTermConditionModule } from './modules/accept-term-condition/accept-term-condition.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 
@@ -32,6 +33,7 @@ import { join } from 'path';
       rootPath: join(__dirname, '..', 'uploads'), // Adjust if needed
       serveRoot: '/uploads', // This will expose files under /uploads
     }),
+    AcceptTermConditionModule
   ],
   controllers: [AppController],
   providers: [

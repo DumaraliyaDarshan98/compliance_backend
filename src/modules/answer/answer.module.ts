@@ -6,13 +6,15 @@ import { Answer, AnswerSchema } from './schema/answer.schema';
 import { ResultModule } from 'src/modules/result/result.module'; // Import the ResultyModule
 import { QuestionModule } from 'src/modules/question/question.module'; // Import the QuestionModule
 import { SubPolicyModule } from 'src/modules/sub-policy/sub-policy.module'; // Import the SubPolicyModule
+import { OptionModule } from 'src/modules/option/option.module';
 
 @Module({
     imports: [
         MongooseModule.forFeature([{ name: Answer.name, schema: AnswerSchema }]),
         ResultModule,
         QuestionModule,
-        SubPolicyModule
+        SubPolicyModule,
+        OptionModule
     ],
     providers: [AnswerService],
     controllers: [AnswerController],
