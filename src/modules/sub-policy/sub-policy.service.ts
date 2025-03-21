@@ -145,11 +145,21 @@ export class SubPolicyService {
                             as: 'conditionDetail',
                         },
                     },
-                    // Separate $match stage for conditionDetail filtering
+                    {
+                        $unwind: {
+                            path: '$conditionDetail',
+                            preserveNullAndEmptyArrays: true, // Optional, depending on use case
+                        },
+                    },
                     {
                         $match: {
-                            "conditionDetail.employeeId": new mongoose.Types.ObjectId(payload.employeeId),
-                        },
+                            $or: [
+                                // Match if conditionDetail doesn't exist
+                                { 'conditionDetail': { $eq: null } },
+                                // Or if conditionDetail.employeeId matches
+                                { 'conditionDetail.employeeId': new mongoose.Types.ObjectId(payload.employeeId) }
+                            ]
+                        }
                     }
                 );
             }
@@ -378,9 +388,20 @@ export class SubPolicyService {
                         },
                     },
                     {
-                        $match: {
-                            "conditionDetail.employeeId": new mongoose.Types.ObjectId(payload.employeeId),
+                        $unwind: {
+                            path: '$conditionDetail',
+                            preserveNullAndEmptyArrays: true, // keep documents even if no match
                         },
+                    },
+                    {
+                        $match: {
+                            $or: [
+                                // Match if conditionDetail doesn't exist
+                                { 'conditionDetail': { $eq: null } },
+                                // Or if conditionDetail.employeeId matches
+                                { 'conditionDetail.employeeId': new mongoose.Types.ObjectId(payload.employeeId) }
+                            ]
+                        }
                     }
                 );
             }

@@ -35,6 +35,7 @@ export class AuthService {
 
   async login(body: { email: string; password: string }): Promise<APIResponseInterface<any>> {
     const employee: any = await this.validateUser(body.email, body.password);
+    
     const payload = { email: employee.email, id: employee._id, role: employee.role };
     const { password, $__, $isNew, ...employeeData } = employee.toObject();
     console.log("{ ...employee, access_token: this.jwtService.sign(payload) }", { ...employee, access_token: this.jwtService.sign(payload) })

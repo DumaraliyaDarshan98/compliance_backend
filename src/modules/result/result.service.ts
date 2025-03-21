@@ -94,17 +94,41 @@ export class ResultService {
                 },
                 {
                     $lookup: {
-                        from: "accepted_terms_conditions",
-                        localField: "_id",
-                        foreignField: "subPolicyId",
-                        as: "conditionDetail",
+                        from: 'accepted_terms_conditions',
+                        localField: '_id',
+                        foreignField: 'subPolicyId',
+                        as: 'conditionDetail',
+                    },
+                },
+                {
+                    $unwind: {
+                        path: '$conditionDetail',
+                        preserveNullAndEmptyArrays: true, // Optional, depending on use case
                     },
                 },
                 {
                     $match: {
-                        "conditionDetail.employeeId": new mongoose.Types.ObjectId(payload.employeeId),
-                    },
+                        $or: [
+                            // Match if conditionDetail doesn't exist
+                            { 'conditionDetail': { $eq: null } },
+                            // Or if conditionDetail.employeeId matches
+                            { 'conditionDetail.employeeId': new mongoose.Types.ObjectId(payload.employeeId) }
+                        ]
+                    }
                 },
+                // {
+                //     $lookup: {
+                //         from: "accepted_terms_conditions",
+                //         localField: "_id",
+                //         foreignField: "subPolicyId",
+                //         as: "conditionDetail",
+                //     },
+                // },
+                // {
+                //     $match: {
+                //         "conditionDetail.employeeId": new mongoose.Types.ObjectId(payload.employeeId),
+                //     },
+                // },
                 {
                     $lookup: {
                         from: "results",
@@ -129,9 +153,9 @@ export class ResultService {
                         version: { $first: "$version" },
                         description: { $first: "$description" },
                         policySettingDetails: { $first: "$policySettingDetails" },
-                        resultDetails: { $push: "$resultDetails" }, 
-                        conditionDetail: { $push: "$conditionDetail" }, 
-                        policyDetail: { $push: "$policyDetail" }, 
+                        resultDetails: { $push: "$resultDetails" },
+                        conditionDetail: { $push: "$conditionDetail" },
+                        policyDetail: { $push: "$policyDetail" },
                     },
                 },
                 {
@@ -247,24 +271,50 @@ export class ResultService {
                 },
                 {
                     $lookup: {
-                        from: "accepted_terms_conditions",
-                        localField: "_id",
-                        foreignField: "subPolicyId",
-                        as: "conditionDetail",
+                        from: 'accepted_terms_conditions',
+                        localField: '_id',
+                        foreignField: 'subPolicyId',
+                        as: 'conditionDetail',
                     },
                 },
                 {
                     $unwind: {
-                        path: "$conditionDetail", 
-                        preserveNullAndEmptyArrays: true, 
+                        path: '$conditionDetail',
+                        preserveNullAndEmptyArrays: true, // Optional, depending on use case
                     },
                 },
-
                 {
                     $match: {
-                        "conditionDetail.employeeId": new mongoose.Types.ObjectId(payload.employeeId),
-                    },
+                        $or: [
+                            // Match if conditionDetail doesn't exist
+                            { 'conditionDetail': { $eq: null } },
+                            // Or if conditionDetail.employeeId matches
+                            { 'conditionDetail.employeeId': new mongoose.Types.ObjectId(payload.employeeId) }
+                        ]
+                    }
                 },
+
+                // {
+                //     $lookup: {
+                //         from: "accepted_terms_conditions",
+                //         localField: "_id",
+                //         foreignField: "subPolicyId",
+                //         as: "conditionDetail",
+                //     },
+                // },
+                // {
+                //     $unwind: {
+                //         path: "$conditionDetail", 
+                //         preserveNullAndEmptyArrays: true, 
+                //     },
+                // },
+
+                // {
+                //     $match: {
+                //         "conditionDetail.employeeId": new mongoose.Types.ObjectId(payload.employeeId),
+                //     },
+                // },
+
                 {
                     $lookup: {
                         from: "results",
@@ -307,8 +357,8 @@ export class ResultService {
                         policySettingDetails: { $first: "$policySettingDetails" },
                         resultDetails: { $push: "$resultDetails" },
                         policyDueDate: { $push: "$policyDueDate" },
-                        conditionDetail: { $push: "$conditionDetail" }, 
-                        policyDetail: { $push: "$policyDetail" }, 
+                        conditionDetail: { $push: "$conditionDetail" },
+                        policyDetail: { $push: "$policyDetail" },
                     },
                 },
                 {
