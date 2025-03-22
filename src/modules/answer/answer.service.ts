@@ -172,9 +172,15 @@ export class AnswerService {
                     {
                         $lookup: {
                             from: 'options',
-                            localField: '_id',
+                            localField: 'questionId',
                             foreignField: 'questionId',
                             as: 'optionsDetails',
+                        },
+                    },
+                    {
+                        $unwind: {
+                            path: "$questionDetails",
+                            preserveNullAndEmptyArrays: true,
                         },
                     },
                     {
@@ -185,7 +191,24 @@ export class AnswerService {
                     },
                     {
                         $sort : sortOptions,
-                    }
+                    },
+                    {
+                        $addFields: {
+                            "questionDetails.options": "$optionsDetails"
+                        }
+                    },
+                    {
+                        $group: {
+                            _id: "$_id",
+                            subPolicyId: { $first: "$subPolicyId" },
+                            questionId: { $first: "$questionId" },
+                            employeeId: { $first: "$employeeId" },
+                            resultId: { $first: "$resultId" },
+                            answer: { $first: "$answer" },
+                            createdAt: { $push: "$createdAt" },
+                            questionDetails: { $push: "$questionDetails" },
+                        },
+                    },
                ];
 
             var countResult = await this.answerModel.aggregate(pipeline);

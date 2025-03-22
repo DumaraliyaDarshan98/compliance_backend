@@ -488,6 +488,8 @@ export class ResultService {
             empMatchQuery.role = ROLES.LINE_MANAGER;
         }
 
+        empMatchQuery.isActive = 1;
+
         if (payload?.searchTest) {
             empMatchQuery.firstName = { $regex: new RegExp(payload?.searchTest, 'i') };
             empMatchQuery.lastName = { $regex: new RegExp(payload?.searchTest, 'i') };
