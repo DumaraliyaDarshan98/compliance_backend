@@ -19,6 +19,7 @@ import {
 import {
     APIResponseInterface
 } from "src/utils/interfaces/response.interface";
+import * as mongoose from 'mongoose';
 
 @Injectable()
 export class PolicyService {
@@ -91,14 +92,31 @@ export class PolicyService {
                         from: 'sub_policies',
                         localField: '_id',
                         foreignField: 'policyId',
+                        pipeline: [
+                            {
+                                $match: {
+                                    $expr: { $and: [ { $eq: [ "$isActive", 1 ] } ] }
+                                }
+                            },
+                            {
+                                $lookup: {
+                                    from: 'accepted_terms_conditions', 
+                                    localField: '_id', 
+                                    foreignField: 'subPolicyId', 
+                                    pipeline: [
+                                        {
+                                            $match: {
+                                                "employeeId": new mongoose.Types.ObjectId(payload.employeeId), // Filter by employeeId
+                                            }
+                                        },],
+                                    as: 'conditionDetail',
+                                },
+                            },
+                            {
+                                $sort: { 'createdAt' : 1},
+                            }
+                        ],
                         as: 'subPolicyDetail',
-                    },
-                },
-                {
-                    $addFields: {
-                        subPolicyDetail: {
-                            $sortArray: { input: '$subPolicyDetail', sortBy: { createdAt: -1 } },
-                        },
                     },
                 },
                 {
@@ -121,9 +139,9 @@ export class PolicyService {
                 },
                 {
                     $limit: pageLimit,
-                },
+                }
             ];
-
+             
             const policyList = await this.policyModel.aggregate(pipeline);
 
             if (policyList.length <= 0) {
