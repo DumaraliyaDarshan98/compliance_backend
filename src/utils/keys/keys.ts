@@ -1,8 +1,8 @@
 export const CONFIG = {
     databaseUrl: "mongodb+srv://compliance:CMaZlFCkGpfP0dqx@cluster0.sfxqo.mongodb.net/",
     email: "darshandumaraliya@gmail.com",
-    password : "rqtz pjjb fodv cfxw",
-    frontURL : "http://localhost:4200/"
+    password: "rqtz pjjb fodv cfxw",
+    frontURL: "https://compliance.delphiservices.co.uk/#/"
 }
 
 // const DB_URL = 'mongodb+srv://darshandumaraliya:xet1UWlJfAKi2S9R@testingcluster.8xnf6.mongodb.net/?retryWrites=true&w=majority&appName=testingcluster';
