@@ -63,7 +63,7 @@ export class AuthService {
       await this.mailService.sendResetPasswordEmail(employee.email, emailContent, 'Reset Your Password');
 
       employee.resetPasswordToken = resetToken;
-      employee.resetPasswordExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 min expiry
+      employee.resetPasswordExpires = new Date(Date.now() + 50 * 60 * 1000); // 15 min expiry
 
       await employee.save();
 
@@ -81,7 +81,7 @@ export class AuthService {
       const user = await this.employeeModel.findOne({
         _id: decoded.id,
         resetPasswordToken: token,
-        resetPasswordExpires: { $gt: new Date() } // Check if token is still valid
+        // resetPasswordExpires: { $gt: new Date() } // Check if token is still valid
       });
 
       if (!user) {
@@ -99,6 +99,7 @@ export class AuthService {
 
       return { message: 'Password updated successfully' };
     } catch (error) {
+      console.log("error", error);
       throw new BadRequestException('Invalid token');
     }
   }
