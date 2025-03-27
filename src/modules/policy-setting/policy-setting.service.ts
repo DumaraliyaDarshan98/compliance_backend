@@ -17,6 +17,7 @@ export class PolicySettingService {
             // Validate required fields
             const requiredFields = [
                 { field: "subPolicyId", message: "Sub Policy Id is required" },
+                { field: "policyType", message: "Policy Type is required" },
             ];
 
             for (const { field, message } of requiredFields) {
@@ -62,19 +63,27 @@ export class PolicySettingService {
             } else {
 
                 // Validate required fields
-                const requiredFields = [
-                    { field: "publishDate", message: "Publish Date is required" },
-                    { field: "skipWeekDays", message: "Skip WeekDays is required" },
-                    { field: "examTimeLimit", message: "Exam Time Limit is required" },
-                    { field: "maximumRettemptDaysLeft", message: "Max Re-Attempt days left is required" },
-                    { field: "maximumAttempt", message: "Max Attempt is required" },
-                    { field: "maximumMarks", message: "Max Marks is required" },
-                    { field: "maximumScore", message: "Max Score is required" },
-                    { field: "maximumQuestions", message: "Max Questions is required" },
-                    { field: "timeLimit", message: "Time limit is required" },
-                    { field: "PassingScore", message: "Passing Score is required" },
-                    { field: "dueDate", message: "Due Date is required" },
-                ];
+                if(payload.policyType == 1){
+                    const requiredFields = [
+                        { field: "publishDate", message: "Publish Date is required" },
+                        { field: "skipWeekDays", message: "Skip WeekDays is required" },
+                        { field: "examTimeLimit", message: "Exam Time Limit is required" },
+                        { field: "maximumRettemptDaysLeft", message: "Max Re-Attempt days left is required" },
+                        { field: "maximumAttempt", message: "Max Attempt is required" },
+                        { field: "maximumMarks", message: "Max Marks is required" },
+                        { field: "maximumScore", message: "Max Score is required" },
+                        { field: "maximumQuestions", message: "Max Questions is required" },
+                        { field: "timeLimit", message: "Time limit is required" },
+                        { field: "PassingScore", message: "Passing Score is required" },
+                        { field: "dueDate", message: "Due Date is required" },
+                    ];
+                } else {
+                    const requiredFields = [
+                        { field: "publishDate", message: "Publish Date is required" },
+                        { field: "examTimeLimit", message: "Exam Time Limit is required" }
+                    ];
+                }
+                
 
                 for (const { field, message } of requiredFields) {
                     if (!payload?.[field]) {

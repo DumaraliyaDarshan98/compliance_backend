@@ -261,6 +261,16 @@ export class ResultService {
                         as: "policySettingDetails",
                     },
                 },
+                 {
+                    $match: {
+                        'policySettingDetails.publishDate': {
+                            $lt: new Date()
+                        }, // Filter by publish date
+                        'policySettingDetails.examTimeLimit': {
+                            $gte: new Date()
+                        }, // Filter by exam time limit
+                    },
+                },
                 {
                     $lookup: {
                         from: "policies",
@@ -293,43 +303,50 @@ export class ResultService {
                         ]
                     }
                 },
-
-                // {
-                //     $lookup: {
-                //         from: "accepted_terms_conditions",
-                //         localField: "_id",
-                //         foreignField: "subPolicyId",
-                //         as: "conditionDetail",
-                //     },
-                // },
-                // {
-                //     $unwind: {
-                //         path: "$conditionDetail", 
-                //         preserveNullAndEmptyArrays: true, 
-                //     },
-                // },
-
-                // {
-                //     $match: {
-                //         "conditionDetail.employeeId": new mongoose.Types.ObjectId(payload.employeeId),
-                //     },
-                // },
-
                 {
                     $lookup: {
                         from: "results",
                         localField: "_id",
                         foreignField: "subPolicyId",
+                        pipeline: [
+                                {
+                                    $match: {
+                                        $expr: { 
+                                            $and: [
+                                                { $eq: ["$employeeId", new mongoose.Types.ObjectId(payload.employeeId)] }
+                                            ]
+                                        }
+                                    }
+                                },
+                                {
+                                    $sort: { 'createdAt': -1 }, // Sort by createdAt descending (latest result first)
+                                },
+                                {
+                                    $limit: 1 // Get the latest result
+                                },
+                                {
+                                    $project: {
+                                        _id: 1,
+                                        subPolicyId:1,
+                                        employeeId:1,
+                                        score:1,
+                                        submitDate:1,
+                                        resultStatus:1,
+                                        duration:1,
+                                        status: 1,
+                                        createdAt: 1, // Ensure we have status and createdAt to check for latest
+                                    }
+                                }
+                            ],
                         as: "resultDetails",
                     },
                 },
                 {
-                    // Filter for cases where resultDetails does not contain the employeeId
                     $match: {
                         $or: [
-                            { "resultDetails": { $eq: null } }, // If resultDetails is null
-                            { "resultDetails": { $size: 0 } }, // If resultDetails is an empty array
-                            { "resultDetails.employeeId": { $ne: new mongoose.Types.ObjectId(payload.employeeId) } }, // If the employeeId doesn't match
+                            { "resultDetails": { $eq: null } },
+                            { "resultDetails": { $size: 0 } }, 
+                            { "resultDetails": { $elemMatch: { "resultStatus": "2" } } }, // Matches if any element has resultStatus: "2"
                         ],
                     },
                 },
