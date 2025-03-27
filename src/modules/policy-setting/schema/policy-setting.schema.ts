@@ -17,34 +17,34 @@ export class PolicySetting {
     @Prop({ required: true, type: Date })
     publishDate: Date;
 
-    @Prop({ required: true, type: Number, enum: [0, 1], default: 1 })
+    @Prop({ type: Number, enum: [0, 1], default: 1 })
     skipWeekDays: 0 | 1;
 
     @Prop({ required: true, type: Date })
     examTimeLimit: Date;
 
-    @Prop({ required: true, type: Number })
+    @Prop({ type: Number })
     maximumRettemptDaysLeft: number;
 
-    @Prop({ required: true, type: Number })
+    @Prop({ type: Number })
     maximumAttempt: number;
 
-    @Prop({ required: true, type: Number })
+    @Prop({ type: Number })
     maximumMarks: number;
 
-    @Prop({ required: true, type: Number })
+    @Prop({ type: Number })
     maximumScore: number;
 
-    @Prop({ required: true, type: Number })
+    @Prop({ type: Number })
     maximumQuestions: number;
 
-    @Prop({ required: true, type: Number })
+    @Prop({ type: Number })
     timeLimit: number; // Time limit in minutes
 
-    @Prop({ required: true, type: Number })
+    @Prop({ type: Number })
     PassingScore: number; // Time limit in minutes
 
-    @Prop({ required: true, type: Date })
+    @Prop({ type: Date })
     dueDate: Date;
 }
 
