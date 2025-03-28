@@ -199,6 +199,13 @@ export class QuestionService {
                 const size = Number(payload?.size);
                 const allQuestions = selectedQuestions;
 
+                if(allQuestions?.length  == 0) {
+                    return  {
+                        code: HttpStatus.OK,
+                        message: 'Question list not found',
+                    };
+                }
+
                 // Ensure that randomNumber does not exceed the available questions
                 const randomNumber = Math.min(Math.floor(Math.random() * size) + 1, allQuestions.length); 
                 console?.log("randomNumberrandomNumberrandomNumber", randomNumber);
