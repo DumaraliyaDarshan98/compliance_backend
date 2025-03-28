@@ -196,16 +196,17 @@ export class QuestionService {
 
             if (payload?.size !== undefined) {
 
-                const size = payload?.size;
+                const size = Number(payload?.size);
                 const allQuestions = selectedQuestions;
 
                 // Ensure that randomNumber does not exceed the available questions
                 const randomNumber = Math.min(Math.floor(Math.random() * size) + 1, allQuestions.length); 
+                console?.log("randomNumberrandomNumberrandomNumber", randomNumber);
 
                 // Step 3: Generate random indices
                 const randomIndices: Set<number> = new Set(); // Explicitly declare the Set type as number
 
-                while (randomIndices.size < randomNumber) {
+                while (randomIndices.size < size) {
                     const randIndex = Math.floor(Math.random() * allQuestions.length);
                     randomIndices.add(randIndex);
                 }
@@ -214,6 +215,7 @@ export class QuestionService {
                 selectedQuestions = Array.from(randomIndices).map((index: number) => allQuestions[index]);
             }
 
+            await new Promise((resolve) => setTimeout(resolve, 1000));
 
             if (selectedQuestions.length === 0) {
                 return {
