@@ -640,6 +640,7 @@ export class ResultService {
                         version: 1,
                         description: 1,
                         createdAt: 1,
+                        userGroup:1
                     },
                 },
                 {
@@ -684,7 +685,7 @@ export class ResultService {
                                                 {
                                                     $match: {
                                                         $or: [
-                                                            { 'conditionDetail.employeeId': new mongoose.Types.ObjectId(payload.employeeId) }
+                                                            { 'employeeId': new mongoose.Types.ObjectId(payload.employeeId) }
                                                         ]
                                                     }
                                                 }
@@ -700,16 +701,14 @@ export class ResultService {
                                             pipeline :[
                                                 {
                                                     $match: {
-                                                        $or: [
-                                                            { 'policyDueDate.employeeId': new mongoose.Types.ObjectId(payload.employeeId) }
-                                                        ]
+                                                        'employeeId': new mongoose.Types.ObjectId(payload.employeeId)
                                                     }
-                                                }
+                                                },
                                             ],
                                             as: "policyDueDate",
                                         },
                                     },
-                                {
+                                    {
                                     $lookup: {
                                         from: "results",
                                         localField: "_id",
@@ -717,11 +716,9 @@ export class ResultService {
                                         pipeline: [
                                                 {
                                                     $match: {
-                                                        $expr: { 
-                                                            $and: [
-                                                                { $eq: ["$employeeId", new mongoose.Types.ObjectId(payload.employeeId)] }
-                                                            ]
-                                                        }
+                                                        $or: [
+                                                            { 'employeeId': new mongoose.Types.ObjectId(payload.employeeId) }
+                                                        ]
                                                     }
                                                 },
                                                 {
@@ -772,7 +769,27 @@ export class ResultService {
                                         ],
                                         as: "questions",
                                     },
+                                },
+                                {
+                                    $unwind: {
+                                        path: '$questions',
+                                        preserveNullAndEmptyArrays: false,
+                                    },
                                 }, 
+                                {
+                                    $group: {
+                                        _id: "$_id",
+                                        name: { $first: "$name" },
+                                        version: { $first: "$version" },
+                                        description: { $first: "$description" },
+                                        createdAt: { $first: "$createdAt" },
+                                        policySettingDetail: { $first: "$policySettingDetail" },
+                                        conditionDetail: { $first: "$conditionDetail" },
+                                        policyDueDate: { $first: "$policyDueDate" },
+                                        resultDetails: { $first: "$resultDetails" },
+                                        questions: { $push: "$questions" }
+                                    },
+                                },
                                 {
                                     $sort: { 'createdAt': -1 }, // Sort by createdAt descending (latest result first)
                                 }
@@ -787,8 +804,19 @@ export class ResultService {
                     },
                 },
                 {
+                    $group: {
+                        _id: "$_id",
+                        name: { $first: "$name" },
+                        version: { $first: "$version" },
+                        description: { $first: "$description" },
+                        createdAt: { $first: "$createdAt" },
+                        userGroup : { $first : "$userGroup"},
+                        subPoliciyDetail: { $push: "$subPoliciyDetail" }
+                    },
+                },
+                {
                     $sort: sortOptions,
-                }
+                },
             ];
 
             const countResult = await this.policyModel.aggregate(pipeline);
