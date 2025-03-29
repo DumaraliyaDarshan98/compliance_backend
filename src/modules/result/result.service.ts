@@ -202,7 +202,7 @@ export class ResultService {
     }
 
     // Method to get outstanding results
-    async getOutStandingList(payload: any): Promise<APIResponseInterface<any>> {
+    /*async getOutStandingList1(payload: any): Promise<APIResponseInterface<any>> {
         try {
             // Validate required fields
             const requiredFields = [
@@ -418,7 +418,7 @@ export class ResultService {
                 message: error.message,
             };
         }
-    }
+    }*/
 
     // Method to get admin test employee list
     async getAdminTestEmployeeList(payload: any): Promise<APIResponseInterface<any>> {
@@ -592,4 +592,240 @@ export class ResultService {
         var result = await this.employeeModel.aggregate(empPipeline);
         return { count: countResult.length, result: result };
     }
+
+    async getOutStandingList(payload: any): Promise<APIResponseInterface<any>> {
+        try {
+            // Validate required fields
+            const requiredFields = [
+                { field: "employeeId", message: "Employee Id is required" },
+                { field: "userGroup", message: "User Group is required" },
+            ];
+
+            for (const { field, message } of requiredFields) {
+                if (!payload?.[field]) {
+                    return {
+                        code: HttpStatus.BAD_REQUEST,
+                        message,
+                    };
+                }
+            }
+
+            // Match query for filtering questions
+            let matchQuery: any = { isActive: 1 };
+
+            if (payload?.searchText && payload.searchText.trim() !== "") {
+                matchQuery.name = { $regex: payload.searchText, $options: 'i' };
+            }
+
+            let sortOptions = {};
+            if (payload.sortBy && payload.sortOrder) {
+                sortOptions[payload.sortBy] = payload.sortOrder === "asc" ? 1 : -1;
+            } else {
+                sortOptions['_id'] = -1;
+            }
+
+            var pageNumber = payload.pageNumber || 1;
+            var pageLimit = payload.pageLimit || 10;
+            const pageOffset = (pageNumber - 1) * pageLimit;
+
+            const pipeline: PipelineStage[] = [
+                {
+                    $match: matchQuery,
+                },
+                {
+                    $project: {
+                        _id: 1,
+                        policyId: 1,
+                        name: 1,
+                        version: 1,
+                        description: 1,
+                        createdAt: 1,
+                    },
+                },
+                {
+                    $sort: { createdAt: -1 },
+                },
+                {
+                    $lookup: {
+                        from: "sub_policies",
+                        localField: "_id",
+                        foreignField: "policyId",
+                        pipeline: [
+                                    {
+                                        $lookup: {
+                                            from: "policy_settings",
+                                            localField: "_id",
+                                            foreignField: "subPolicyId",
+                                            as: "policySettingDetail",
+                                        },
+                                    },
+                                    {
+                                        $unwind: {
+                                            path: '$policySettingDetail',
+                                            preserveNullAndEmptyArrays: false,
+                                        },
+                                    },
+                                    {
+                                        $match: {
+                                            'policySettingDetail.publishDate': {
+                                                $lt: new Date()
+                                            },
+                                            'policySettingDetail.examTimeLimit': {
+                                                $gte: new Date()
+                                            },
+                                        },
+                                    },
+                                    {
+                                        $lookup: {
+                                            from: 'accepted_terms_conditions',
+                                            localField: '_id',
+                                            foreignField: 'subPolicyId',
+                                            pipeline :[
+                                                {
+                                                    $match: {
+                                                        $or: [
+                                                            { 'conditionDetail.employeeId': new mongoose.Types.ObjectId(payload.employeeId) }
+                                                        ]
+                                                    }
+                                                }
+                                            ],
+                                            as: 'conditionDetail',
+                                        },
+                                    },
+                                    {
+                                        $lookup: {
+                                            from: "policy_due_dates",
+                                            localField: "_id",
+                                            foreignField: "subPolicyId",
+                                            pipeline :[
+                                                {
+                                                    $match: {
+                                                        $or: [
+                                                            { 'policyDueDate.employeeId': new mongoose.Types.ObjectId(payload.employeeId) }
+                                                        ]
+                                                    }
+                                                }
+                                            ],
+                                            as: "policyDueDate",
+                                        },
+                                    },
+                                {
+                                    $lookup: {
+                                        from: "results",
+                                        localField: "_id",
+                                        foreignField: "subPolicyId",
+                                        pipeline: [
+                                                {
+                                                    $match: {
+                                                        $expr: { 
+                                                            $and: [
+                                                                { $eq: ["$employeeId", new mongoose.Types.ObjectId(payload.employeeId)] }
+                                                            ]
+                                                        }
+                                                    }
+                                                },
+                                                {
+                                                    $sort: { 'createdAt': -1 }, // Sort by createdAt descending (latest result first)
+                                                },
+                                                {
+                                                    $limit: 1 // Get the latest result
+                                                },
+                                                {
+                                                    $project: {
+                                                        _id: 1,
+                                                        subPolicyId:1,
+                                                        employeeId:1,
+                                                        score:1,
+                                                        submitDate:1,
+                                                        resultStatus:1,
+                                                        duration:1,
+                                                        status: 1,
+                                                        createdAt: 1, // Ensure we have status and createdAt to check for latest
+                                                    }
+                                                }
+                                            ],
+                                        as: "resultDetails",
+                                    },
+                                },
+                                {
+                                    $match: {
+                                        $or: [
+                                            { "resultDetails": { $eq: null } },
+                                            { "resultDetails": { $size: 0 } }, 
+                                            { "resultDetails": { $elemMatch: { "resultStatus": "2" } } }, // Matches if any element has resultStatus: "2"
+                                        ],
+                                    },
+                                },
+                                {
+                                    $lookup: {
+                                        from: "questions",
+                                        localField: "_id",
+                                        foreignField: "subPolicyId",
+                                        pipeline :[
+                                            {
+                                                $match: {
+                                                    $or: [
+                                                        { 'userGroup': payload.userGroup }
+                                                    ]
+                                                }
+                                            }
+                                        ],
+                                        as: "questions",
+                                    },
+                                }, 
+                                {
+                                    $sort: { 'createdAt': -1 }, // Sort by createdAt descending (latest result first)
+                                }
+                        ],
+                        as: "subPoliciyDetail",
+                    },
+                },
+                {
+                    $unwind: {
+                        path: '$subPoliciyDetail',
+                        preserveNullAndEmptyArrays: false,
+                    },
+                },
+                {
+                    $sort: sortOptions,
+                }
+            ];
+
+            const countResult = await this.policyModel.aggregate(pipeline);
+            pipeline.push({
+                $skip: pageOffset
+            },
+                {
+                    $limit: pageLimit
+                }
+            );
+
+            const result = await this.policyModel.aggregate(pipeline);
+
+            if (result.length === 0) {
+                return {
+                    code: HttpStatus.OK,
+                    message: 'Not Found',
+                };
+            }
+
+            return {
+                code: HttpStatus.CREATED,
+                message: "Out Standing List list successfully",
+                data: {
+                    policyList: result,
+                    count: countResult.length,
+                    pageNumber: pageNumber,
+                    pageLimit: pageLimit
+                },
+            };
+        } catch (error) {
+            console.error("Error getOutStandingList:", error);
+            return {
+                code: HttpStatus.INTERNAL_SERVER_ERROR,
+                message: error.message,
+            };
+        }
+    }
+
 }
