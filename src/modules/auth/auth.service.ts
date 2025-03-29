@@ -59,7 +59,77 @@ export class AuthService {
 
       // Mail send to user
       const resetUrl = `${CONFIG.frontURL}reset?token=${resetToken}`;
-      const emailContent: any = `<p>Click <a href="${resetUrl}">here</a> to reset your password.</p>`;
+      // const emailContent: any = `<p>Click <a href="${resetUrl}">here</a> to reset your password.</p>`;
+      const emailContent: any = `
+      <!DOCTYPE html>
+<html>
+<head>
+    <title>Reset Your Password</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 100%;
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            /* text-align: center; */
+        }
+        .header-text {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333333;
+            margin-bottom: 20px;
+        }
+        .content {
+            font-size: 16px;
+            color: #333333;
+        }
+        .button {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 24px;
+            background-color: #007BFF;
+            color: #ffffff;
+            text-decoration: none;
+            font-size: 16px;
+            border-radius: 5px;
+        }
+        .footer {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #777777;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header-text">Reset Your Account Password</div>
+        <div class="content">
+            <p>Hello,</p>
+            <p>We received a request to reset your password for your Compliance Team account. If you made this request, please click the link below to set a new password </p>
+            <div style="text-align: center;">
+                <a href="${resetUrl}" class="button">Reset Your Password</a>
+            </div>
+            <p>
+                Thanks, <br>
+                Compliance Team
+            </p>
+            <p class="footer">
+                This link will expire in 15 minutes. If you need further assistance, please contact our support team.
+            </p>
+        </div>
+    </div>
+</body>
+</html>
+      `;
       await this.mailService.sendResetPasswordEmail(employee.email, emailContent, 'Reset Your Password');
 
       employee.resetPasswordToken = resetToken;
