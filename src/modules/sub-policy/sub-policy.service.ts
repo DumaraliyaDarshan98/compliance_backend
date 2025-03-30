@@ -98,6 +98,30 @@ export class SubPolicyService {
             }
             ];
 
+            if (payload.userGroup && payload?.isFrontEndRequest === 1) {
+                pipeline.push({
+                    $lookup: {
+                        from: "questions",
+                        localField: "_id",
+                        foreignField: "subPolicyId",
+                        pipeline :[
+                            {
+                                $match: {
+                                     'userGroup': payload.userGroup
+                                }
+                            }
+                        ],
+                        as: "questions",
+                    },
+                },
+                {
+                    $unwind: {
+                        path: '$questions',
+                        preserveNullAndEmptyArrays: false,
+                    },
+                });
+            }
+
             // If it's a frontend request, include policy settings with additional filters
             if (payload?.isFrontEndRequest === 1) {
                 pipeline.push({
@@ -145,9 +169,7 @@ export class SubPolicyService {
                             pipeline : [
                                 {
                                     $match: {
-                                        $or: [
-                                            { 'employeeId': new mongoose.Types.ObjectId(payload.employeeId) }
-                                        ]
+                                        'employeeId': new mongoose.Types.ObjectId(payload.employeeId)
                                     }
                                 }
                             ],
@@ -156,6 +178,23 @@ export class SubPolicyService {
                     }
                 );
             }
+
+            pipeline.push({
+                    $group: {
+                        _id: "$_id",
+                        name: { $first: "$name" },
+                        version: { $first: "$version" },
+                        description: { $first: "$description" },
+                        createdAt: { $first: "$createdAt" },
+                        policySettings: { $first: "$policySettings" },
+                        conditionDetail: { $first: "$conditionDetail" },
+                        questions: { $push: "$questions" }
+                    },
+                },
+                {
+                    $sort: { 'createdAt': -1 }
+                }
+            );
 
             const countResult = await this.subPolicyModel.aggregate(pipeline);
             const totalCount = countResult.length;
