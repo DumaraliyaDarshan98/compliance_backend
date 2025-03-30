@@ -628,7 +628,8 @@ export class ResultService {
                         version: 1,
                         description: 1,
                         createdAt: 1,
-                        userGroup:1
+                        userGroup:1,
+                        policyType:1
                     },
                 },
                 {
@@ -799,6 +800,7 @@ export class ResultService {
                         description: { $first: "$description" },
                         createdAt: { $first: "$createdAt" },
                         userGroup : { $first : "$userGroup"},
+                        policyType: { $first: "$policyType" },
                         subPoliciyDetail: { $push: "$subPoliciyDetail" }
                     },
                 },
