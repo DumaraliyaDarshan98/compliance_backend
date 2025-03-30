@@ -793,6 +793,81 @@ export class ResultService {
                     },
                 },
                 {
+                    $lookup: {
+                        from: "sub_policies",
+                        localField: "_id",
+                        foreignField: "policyId",
+                        pipeline: [
+                                    {
+                                        $lookup: {
+                                            from: "policy_settings",
+                                            localField: "_id",
+                                            foreignField: "subPolicyId",
+                                            as: "policySettingDetail",
+                                        },
+                                    },
+                                    {
+                                        $unwind: {
+                                            path: '$policySettingDetail',
+                                            preserveNullAndEmptyArrays: false,
+                                        },
+                                    },
+                                    {
+                                        $match: {
+                                            'policySettingDetail.publishDate': {
+                                                $lt: new Date()
+                                            },
+                                            'policySettingDetail.examTimeLimit': {
+                                                $gte: new Date()
+                                            },
+                                        },
+                                    },
+                                    {
+                                        $lookup: {
+                                            from: "questions",
+                                            localField: "_id",
+                                            foreignField: "subPolicyId",
+                                            pipeline :[
+                                                {
+                                                    $match: {
+                                                        $or: [
+                                                            { 'userGroup': payload.userGroup }
+                                                        ]
+                                                    }
+                                                }
+                                            ],
+                                            as: "questions",
+                                        },
+                                    },
+                                    {
+                                        $unwind: {
+                                            path: '$questions',
+                                            preserveNullAndEmptyArrays: false,
+                                        },
+                                    }, 
+                                    {
+                                        $group: {
+                                            _id: "$_id",
+                                            name: { $first: "$name" },
+                                            version: { $first: "$version" },
+                                            description: { $first: "$description" },
+                                            createdAt: { $first: "$createdAt" },
+                                        },
+                                    },
+                                {
+                                    $sort: { 'createdAt': -1 }, // Sort by createdAt descending (latest result first)
+                                }
+                        ],
+                        as: "subPoliciyList",
+                    },
+                },
+                {
+                    $unwind: {
+                        path: '$subPoliciyList',
+                        preserveNullAndEmptyArrays: false,
+                    },
+                },
+                {
                     $group: {
                         _id: "$_id",
                         name: { $first: "$name" },
@@ -801,7 +876,8 @@ export class ResultService {
                         createdAt: { $first: "$createdAt" },
                         userGroup : { $first : "$userGroup"},
                         policyType: { $first: "$policyType" },
-                        subPoliciyDetail: { $push: "$subPoliciyDetail" }
+                        subPoliciyDetail: { $push: "$subPoliciyDetail" },
+                        subPoliciyList: { $first : "$subPoliciyList"}
                     },
                 },
                 {
