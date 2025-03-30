@@ -26,7 +26,13 @@ export class ResultController {
 
     @UseGuards(JwtAuthGuard)
     @Post('/admin-test-employee-list')
-    async getAdminTestEmployeeList(@Body() subPolicyPayload: any) {
-        return this.resultService.getAdminTestEmployeeList(subPolicyPayload);
+    async getAdminTestEmployeeList(@Body() resultPayload: any) {
+        return this.resultService.getAdminTestEmployeeList(resultPayload);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Post('/employee-result-list')
+    async getEmployeeResultList(@Body() resultPayload: any) {
+        return this.resultService.getEmployeeResultList(resultPayload);
     }
 }

@@ -97,6 +97,13 @@ export class ResultService {
                         from: 'accepted_terms_conditions',
                         localField: '_id',
                         foreignField: 'subPolicyId',
+                        pipeline :[
+                            {
+                                $match: {
+                                    'employeeId': new mongoose.Types.ObjectId(payload.employeeId)
+                                }
+                            }
+                        ],
                         as: 'conditionDetail',
                     },
                 },
@@ -107,39 +114,18 @@ export class ResultService {
                     },
                 },
                 {
-                    $match: {
-                        $or: [
-                            // Match if conditionDetail doesn't exist
-                            { 'conditionDetail': { $eq: null } },
-                            // Or if conditionDetail.employeeId matches
-                            { 'conditionDetail.employeeId': new mongoose.Types.ObjectId(payload.employeeId) }
-                        ]
-                    }
-                },
-                // {
-                //     $lookup: {
-                //         from: "accepted_terms_conditions",
-                //         localField: "_id",
-                //         foreignField: "subPolicyId",
-                //         as: "conditionDetail",
-                //     },
-                // },
-                // {
-                //     $match: {
-                //         "conditionDetail.employeeId": new mongoose.Types.ObjectId(payload.employeeId),
-                //     },
-                // },
-                {
                     $lookup: {
                         from: "results",
                         localField: "_id",
                         foreignField: "subPolicyId",
+                        pipeline :[
+                            {
+                                $match: {
+                                    'employeeId': new mongoose.Types.ObjectId(payload.employeeId)
+                                }
+                            }
+                        ],
                         as: "resultDetails",
-                    },
-                },
-                {
-                    $match: {
-                        "resultDetails.employeeId": new mongoose.Types.ObjectId(payload.employeeId),
                     },
                 },
                 {
@@ -541,16 +527,18 @@ export class ResultService {
                         from: "results",
                         localField: "_id",
                         foreignField: "employeeId",
+                        pipeline :[
+                            {
+                                $match: {
+                                    "subPolicyId": new mongoose.Types.ObjectId(payload.subPolicyId),
+                                },
+                            },
+                            { $sort: { "createdAt": -1 } }
+                        ],
                         as: "resultDetails",
                     },
                 },
-                {
-                    $match: {
-                        "resultDetails.subPolicyId": new mongoose.Types.ObjectId(payload.subPolicyId),
-                    },
-                },
                 { $unwind: "$resultDetails" }, // Flatten the resultDetails array
-                { $sort: { "resultDetails._id": -1 } },
                 {
                     $group: {
                         _id: "$_id",
@@ -849,6 +837,57 @@ export class ResultService {
             };
         } catch (error) {
             console.error("Error getOutStandingList:", error);
+            return {
+                code: HttpStatus.INTERNAL_SERVER_ERROR,
+                message: error.message,
+            };
+        }
+    }
+
+    async getEmployeeResultList(payload: any): Promise<APIResponseInterface<any>> {
+        try {
+            // Validate required fields
+            const requiredFields = [
+                { field: "employeeId", message: "Employee Id is required" },
+                { field: "subPolicyId", message: "Sub Policy Id is required" },
+            ];
+
+            for (const { field, message } of requiredFields) {
+                if (!payload?.[field]) {
+                    return {
+                        code: HttpStatus.BAD_REQUEST,
+                        message,
+                    };
+                }
+            }
+
+            const pipeline: PipelineStage[] = [
+                {
+                    $match: {
+                        'employeeId': new mongoose.Types.ObjectId(payload.employeeId),
+                        'subPolicyId': new mongoose.Types.ObjectId(payload.subPolicyId)
+                    },
+                }
+            ];
+
+            const result = await this.resultModel.aggregate(pipeline);
+
+            if (result.length === 0) {
+                return {
+                    code: HttpStatus.OK,
+                    message: "Employee Result Not Found",
+                };
+            }
+
+            return {
+                code: HttpStatus.CREATED,
+                message: "Employee Result list",
+                data: {
+                    subPolicyList: result
+                },
+            };
+        } catch (error) {
+            console.error("Error getEmployeeResultList:", error);
             return {
                 code: HttpStatus.INTERNAL_SERVER_ERROR,
                 message: error.message,
