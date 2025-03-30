@@ -885,7 +885,7 @@ export class ResultService {
                 code: HttpStatus.CREATED,
                 message: "Employee Result list",
                 data: {
-                    subPolicyList: result
+                    resultList: result
                 },
             };
         } catch (error) {
