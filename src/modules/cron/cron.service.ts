@@ -65,7 +65,7 @@ export class CronService {
                     margin-top: 20px;
                     padding: 12px 24px;
                     background-color: #007BFF;
-                    color: #ffffff;
+                    color: black !important;
                     text-decoration: none;
                     font-size: 16px;
                     border-radius: 5px;
