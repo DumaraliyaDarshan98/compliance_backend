@@ -98,7 +98,11 @@ export class SubPolicyService {
             }
             ];
 
-            if (payload.userGroup && payload?.isFrontEndRequest === 1) {
+            /*
+            payload.policyType = 1 (For Information), 2 (For Action)
+            */
+
+            if (payload.policyType == 2 && payload.userGroup && payload?.isFrontEndRequest === 1) {
                 pipeline.push({
                     $lookup: {
                         from: "questions",
@@ -129,9 +133,9 @@ export class SubPolicyService {
                         'policySettings.publishDate': {
                             $lt: new Date()
                         }, // Filter by publish date
-                        'policySettings.examTimeLimit': {
+                        /*'policySettings.examTimeLimit': {
                             $gte: new Date()
-                        }, // Filter by exam time limit
+                        },*/ // Filter by exam time limit
                     },
                 }, {
                     $unwind: '$policySettings',

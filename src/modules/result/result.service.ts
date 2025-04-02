@@ -660,9 +660,9 @@ export class ResultService {
                                             'policySettingDetail.publishDate': {
                                                 $lt: new Date()
                                             },
-                                            'policySettingDetail.examTimeLimit': {
+                                            /*'policySettingDetail.examTimeLimit': {
                                                 $gte: new Date()
-                                            },
+                                            },*/
                                         },
                                     },
                                     {
@@ -817,9 +817,9 @@ export class ResultService {
                                             'policySettingDetail.publishDate': {
                                                 $lt: new Date()
                                             },
-                                            'policySettingDetail.examTimeLimit': {
+                                            /*'policySettingDetail.examTimeLimit': {
                                                 $gte: new Date()
-                                            },
+                                            },*/
                                         },
                                     },
                                     {
