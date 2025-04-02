@@ -49,7 +49,7 @@ export class ResultService {
             let matchQuery: any = { isActive: 1 };
 
             if (payload?.searchText && payload.searchText.trim() !== "") {
-                matchQuery.name = { $regex: payload.searchText, $options: 'i' };
+                matchQuery.version = { $regex: payload.searchText, $options: 'i' };
             }
 
             let sortOptions = {};
