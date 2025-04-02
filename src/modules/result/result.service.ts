@@ -842,7 +842,7 @@ export class ResultService {
                                     {
                                         $unwind: {
                                             path: '$questions',
-                                            preserveNullAndEmptyArrays: false,
+                                            preserveNullAndEmptyArrays: true,
                                         },
                                     }, 
                                     {

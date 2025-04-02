@@ -95,7 +95,22 @@ export class SubPolicyService {
                     foreignField: 'subPolicyId', // Field from policy_settings
                     as: 'policySettings', // Output array of policySettings
                 },
-            }
+            },
+            {
+                $lookup: {
+                    from: "policy_due_dates",
+                    localField: "_id",
+                    foreignField: "subPolicyId",
+                    pipeline: [
+                        {
+                            $match: {
+                                'employeeId': new mongoose.Types.ObjectId(payload.employeeId)
+                            }
+                        },
+                    ],
+                    as: "policyDueDate",
+                },
+            },
             ];
 
             /*
@@ -108,22 +123,22 @@ export class SubPolicyService {
                         from: "questions",
                         localField: "_id",
                         foreignField: "subPolicyId",
-                        pipeline :[
+                        pipeline: [
                             {
                                 $match: {
-                                     'userGroup': payload.userGroup
+                                    'userGroup': payload.userGroup
                                 }
                             }
                         ],
                         as: "questions",
                     },
                 },
-                {
-                    $unwind: {
-                        path: '$questions',
-                        preserveNullAndEmptyArrays: false,
-                    },
-                });
+                    {
+                        $unwind: {
+                            path: '$questions',
+                            preserveNullAndEmptyArrays: false,
+                        },
+                    });
             }
 
             // If it's a frontend request, include policy settings with additional filters
@@ -170,7 +185,7 @@ export class SubPolicyService {
                             from: 'accepted_terms_conditions',
                             localField: '_id',
                             foreignField: 'subPolicyId',
-                            pipeline : [
+                            pipeline: [
                                 {
                                     $match: {
                                         'employeeId': new mongoose.Types.ObjectId(payload.employeeId)
@@ -184,17 +199,18 @@ export class SubPolicyService {
             }
 
             pipeline.push({
-                    $group: {
-                        _id: "$_id",
-                        name: { $first: "$name" },
-                        version: { $first: "$version" },
-                        description: { $first: "$description" },
-                        createdAt: { $first: "$createdAt" },
-                        policySettings: { $first: "$policySettings" },
-                        conditionDetail: { $first: "$conditionDetail" },
-                        questions: { $push: "$questions" }
-                    },
+                $group: {
+                    _id: "$_id",
+                    name: { $first: "$name" },
+                    version: { $first: "$version" },
+                    description: { $first: "$description" },
+                    createdAt: { $first: "$createdAt" },
+                    policySettings: { $first: "$policySettings" },
+                    conditionDetail: { $first: "$conditionDetail" },
+                    questions: { $push: "$questions" },
+                    policyDueDate: { $first: "$policyDueDate" },
                 },
+            },
                 {
                     $sort: { 'createdAt': -1 }
                 }
@@ -421,14 +437,14 @@ export class SubPolicyService {
                             localField: '_id',
                             foreignField: 'subPolicyId',
                             pipeline: [
-                                        {
-                                            $match: {
-                                                $or: [
-                                                    { 'employeeId': new mongoose.Types.ObjectId(payload.employeeId) }
-                                                ]
-                                            }
-                                        },
-                                    ],
+                                {
+                                    $match: {
+                                        $or: [
+                                            { 'employeeId': new mongoose.Types.ObjectId(payload.employeeId) }
+                                        ]
+                                    }
+                                },
+                            ],
                             as: 'conditionDetail',
                         },
                     },
