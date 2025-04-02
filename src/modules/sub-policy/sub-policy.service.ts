@@ -420,6 +420,15 @@ export class SubPolicyService {
                             from: 'accepted_terms_conditions',
                             localField: '_id',
                             foreignField: 'subPolicyId',
+                            pipeline: [
+                                        {
+                                            $match: {
+                                                $or: [
+                                                    { 'employeeId': new mongoose.Types.ObjectId(payload.employeeId) }
+                                                ]
+                                            }
+                                        },
+                                    ],
                             as: 'conditionDetail',
                         },
                     },
@@ -428,16 +437,6 @@ export class SubPolicyService {
                             path: '$conditionDetail',
                             preserveNullAndEmptyArrays: true, // keep documents even if no match
                         },
-                    },
-                    {
-                        $match: {
-                            $or: [
-                                // Match if conditionDetail doesn't exist
-                                { 'conditionDetail': { $eq: null } },
-                                // Or if conditionDetail.employeeId matches
-                                { 'conditionDetail.employeeId': new mongoose.Types.ObjectId(payload.employeeId) }
-                            ]
-                        }
                     }
                 );
             }
