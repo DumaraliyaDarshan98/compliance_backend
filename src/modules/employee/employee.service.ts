@@ -29,11 +29,35 @@ export class EmployeeService {
       throw new BadRequestException(`Email Already Exists`);
     }
 
+    const existingPhoneDetails = await this.employeeModel.findOne({ phone: employeeDto?.phone }).exec();
+    if (existingPhoneDetails) {
+      throw new BadRequestException(`Phone number Already Exists`);
+    }
+
+    const existingPhoneAltDetails = await this.employeeModel.findOne({ alternatePhone: employeeDto?.phone }).exec();
+    if (existingPhoneAltDetails) {
+      throw new BadRequestException(`Phone number Already Exists`);
+    }
+
+    if (employeeDto?.alternatePhone) {
+      const existingAlPhoneDetails = await this.employeeModel.findOne({ alternatePhone: employeeDto?.alternatePhone }).exec();
+      if (existingAlPhoneDetails) {
+        throw new BadRequestException(`Alternate Phone number Already Exists`);
+      }
+    }
+
+    if (employeeDto?.alternatePhone) {
+      const existingAlPhoneNumberDetails = await this.employeeModel.findOne({ phone: employeeDto?.alternatePhone }).exec();
+      if (existingAlPhoneNumberDetails) {
+        throw new BadRequestException(`Alternate Phone number Already Exists`);
+      }
+    }
+
     const payload = { ...rest }
     if (img) {
       payload['profileImg'] = '/uploads/profile/' + img.filename
     }
-
+    return { data: payload };
     const employee = new this.employeeModel(payload);
 
     try {
@@ -156,8 +180,13 @@ export class EmployeeService {
     const existingEmployees = await this.employeeModel.find({ email: { $in: emails } }).exec();
     const existingEmails = new Set(existingEmployees.map(emp => emp.email));
 
+    const phones = employeeDtos.map(emp => emp.phone);
+
+    const existingPhoneEmployees = await this.employeeModel.find({ phone: { $in: phones } }).exec();
+    const existingPhones = new Set(existingPhoneEmployees.map(emp => emp.phone));
+
     const newEmployees = employeeDtos
-      .filter(emp => !existingEmails.has(emp.email))
+      .filter(emp => !existingEmails.has(emp.email) && !existingPhones.has(emp.phone))
       .map(({ password, isSendMail, ...rest }) => new this.employeeModel(rest));
 
     if (newEmployees.length === 0) {
@@ -172,7 +201,7 @@ export class EmployeeService {
 
     try {
       const createdEmployees = await this.employeeModel.insertMany(newEmployees);
-      
+
       return { data: createdEmployees };
     } catch (error) {
       throw new InternalServerErrorException("Failed to create employees");
