@@ -57,7 +57,6 @@ export class EmployeeService {
     if (img) {
       payload['profileImg'] = '/uploads/profile/' + img.filename
     }
-    return { data: payload };
     const employee = new this.employeeModel(payload);
 
     try {
