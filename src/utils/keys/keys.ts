@@ -1,7 +1,7 @@
 export const CONFIG = {
     databaseUrl: "mongodb+srv://compliance:CMaZlFCkGpfP0dqx@cluster0.sfxqo.mongodb.net/",
     email: "darshandumaraliya@gmail.com",
-    password: "rqtz pjjb fodv cfxw",
+    password: "scax jznf deob atoh",
     // frontURL: "https://compliance.delphiservices.co.uk/#/",
     frontURL: "https://compliance.whyqtech.com/#/"
 }
