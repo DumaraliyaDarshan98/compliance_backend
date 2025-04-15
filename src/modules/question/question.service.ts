@@ -20,7 +20,7 @@ export class QuestionService {
         @InjectModel(SubPolicy.name) private readonly subPolicyModel: Model<SubPolicyDocument>,
         @InjectModel(Option.name) private readonly optionModel: Model<OptionDocument>,
         @InjectModel(Question.name) private readonly questionModel: Model<QuestionDocument>,
-    ) {}
+    ) { }
 
     // Create a question with options
     async createQuestion(payload: any): Promise<APIResponseInterface<any>> {
@@ -49,8 +49,29 @@ export class QuestionService {
                 };
             }
 
+            // Fetch all existing questions for the given subPolicyId and userGroup
+            const existingQuestions = await this.questionModel.find({
+                subPolicyId: payload.subPolicyId,
+                userGroup: payload.userGroup,
+            });
+
             // Save questions and options
             for (const question of payload.questions) {
+                const originalText = question.questionText;
+                const normalizedText = originalText.trim().replace(/\s+/g, ' ').toLowerCase(); // normalize spaces and case
+
+                // Check against normalized existing questions
+                const isDuplicate = existingQuestions.some(existing => {
+                    const existingNormalized = existing.questionText.trim().replace(/\s+/g, ' ').toLowerCase();
+                    return existingNormalized == normalizedText &&
+                        existing.questionType == question.questionType;
+                });
+
+                if (isDuplicate) {
+                    console.log(`Duplicate found. Skipping question: "${originalText}"`);
+                    continue;
+                }
+
                 const questionData = {
                     questionText: question.questionText,
                     questionType: question.questionType,
@@ -140,7 +161,7 @@ export class QuestionService {
             var pageNumber = payload.pageNumber || 1;
             var pageLimit = payload.pageLimit || 10;
             const pageOffset = (pageNumber - 1) * pageLimit;
-            
+
             const pipeline: PipelineStage[] = [
                 {
                     $match: matchQuery, // Match questions based on filter criteria
@@ -178,18 +199,18 @@ export class QuestionService {
                     },
                 },
                 {
-                    $sort : sortOptions,
+                    $sort: sortOptions,
                 },
             ];
 
             var countResult = await this.questionModel.aggregate(pipeline);
 
             pipeline.push({
-                    $skip: pageOffset
-                }, 
+                $skip: pageOffset
+            },
                 {
                     $limit: pageLimit
-                } 
+                }
             );
 
             var selectedQuestions = await this.questionModel.aggregate(pipeline);
@@ -199,19 +220,19 @@ export class QuestionService {
                 let size = Number(payload?.size);
                 const allQuestions = selectedQuestions;
 
-                if(allQuestions?.length  == 0) {
-                    return  {
+                if (allQuestions?.length == 0) {
+                    return {
                         code: HttpStatus.OK,
                         message: 'Question list not found',
                     };
                 }
 
-                if(size > allQuestions.length) {
+                if (size > allQuestions.length) {
                     size = allQuestions.length;
                 }
 
                 // Ensure that randomNumber does not exceed the available questions
-                const randomNumber = Math.min(Math.floor(Math.random() * size) + 1, allQuestions.length); 
+                const randomNumber = Math.min(Math.floor(Math.random() * size) + 1, allQuestions.length);
 
                 // Step 3: Generate random indices
                 const randomIndices: Set<number> = new Set(); // Explicitly declare the Set type as number
@@ -324,7 +345,7 @@ export class QuestionService {
             existingQuestion.userGroup = payload.userGroup;
             existingQuestion.answer = payload.answer;
             existingQuestion.isActive = payload?.isActive,
-            await existingQuestion.save();
+                await existingQuestion.save();
 
             // Delete old options and add new ones
             await this.optionModel.deleteMany({ questionId: payload.id });
