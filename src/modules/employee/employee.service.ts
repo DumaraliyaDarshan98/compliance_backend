@@ -1,13 +1,10 @@
-import { BadRequestException, forwardRef, Inject, Injectable, InternalServerErrorException, NotFoundException, HttpStatus } from "@nestjs/common";
+import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException, HttpStatus } from "@nestjs/common";
 import { Employee, EmployeeDocument } from "./schema/employee.schema";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { APIResponseInterface } from "src/utils/interfaces/response.interface";
-import * as bcrypt from 'bcrypt';
 import { MailerService } from "src/utils/mailer/mailer.service";
 import { CONFIG } from "src/utils/keys/keys";
-import * as fs from 'fs';
-import * as path from 'path';
 
 @Injectable()
 export class EmployeeService {
@@ -21,7 +18,16 @@ export class EmployeeService {
     const { password, profileImg, ...rest } = employeeDto;
     console.log("employeeDto", employeeDto);
     if (!employeeDto?.email) {
-      throw new BadRequestException(`Please enter your email address`);
+      throw new BadRequestException(`Please enter email address`);
+    }
+
+    if (!employeeDto?.employeeIdentity) {
+      throw new BadRequestException(`Please enter employee Id`);
+    }
+
+    const existingEmployeeId = await this.employeeModel.findOne({ employeeIdentity: employeeDto?.employeeIdentity }).exec();
+    if (existingEmployeeId) {
+      throw new BadRequestException(`Employee Id Already Exists`);
     }
 
     const existingDetails = await this.employeeModel.findOne({ email: employeeDto?.email }).exec();
@@ -174,6 +180,11 @@ export class EmployeeService {
       throw new BadRequestException(`Invalid request. Please provide employee data.`);
     }
 
+    const employeeIdList = employeeDtos.map(emp => emp.employeeIdentity);
+
+    const existingEmpIds = await this.employeeModel.find({ employeeIdentity: { $in: employeeIdList } }).exec();
+    const existingEmpIdList = new Set(existingEmpIds.map(emp => emp.employeeIdentity));
+
     const emails = employeeDtos.map(emp => emp.email);
 
     const existingEmployees = await this.employeeModel.find({ email: { $in: emails } }).exec();
@@ -185,7 +196,7 @@ export class EmployeeService {
     const existingPhones = new Set(existingPhoneEmployees.map(emp => emp.phone));
 
     const newEmployees = employeeDtos
-      .filter(emp => !existingEmails.has(emp.email) && !existingPhones.has(emp.phone))
+      .filter(emp => !existingEmails.has(emp.email) && !existingPhones.has(emp.phone) && !existingEmpIdList.has(emp.employeeIdentity))
       .map(({ password, isSendMail, ...rest }) => new this.employeeModel(rest));
 
     if (newEmployees.length === 0) {

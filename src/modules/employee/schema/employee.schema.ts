@@ -19,10 +19,10 @@ export class Employee {
     @Prop({ required: true })
     lastName: string;
 
-    @Prop({ required: true, default: 'Male' })
+    @Prop({ required: true })
     gender: string;
 
-    @Prop({ required: false, type: Date })
+    @Prop({ required: true, type: Date })
     birthDate: Date;
 
     @Prop({ required: true, unique: true })
@@ -31,19 +31,19 @@ export class Employee {
     @Prop({ required: true, type: Date })
     dateOfJoining: Date;
 
-    @Prop()
+    @Prop({ required: true })
     phone: string;
 
     @Prop()
     alternatePhone?: string;
 
-    @Prop()
+    @Prop({ required: true })
     country: string;
 
-    @Prop()
+    @Prop({ required: true })
     state: string;
 
-    @Prop()
+    @Prop({ required: true })
     city: string;
 
     @Prop({ required: true, enum: ROLES })
@@ -60,6 +60,12 @@ export class Employee {
 
     @Prop()
     profileImg?: string;
+
+    @Prop({ required: true })
+    employeeIdentity?: string;
+
+    @Prop({ required: true })
+    jobTitle?: string;
 
     @Prop({ required: true, type: Number, enum: [0, 1], default: 1 })
     isActive: 0 | 1;
