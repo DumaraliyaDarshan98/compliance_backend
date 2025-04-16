@@ -16,6 +16,7 @@ import { ResultModule } from './modules/result/result.module';
 import { PolicyDueDateModule } from './modules/policy-due-date/policy-due-date.module';
 import { AcceptTermConditionModule } from './modules/accept-term-condition/accept-term-condition.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
+import { ConfigModule } from '@nestjs/config';
 import { join } from 'path';
 
 @Module({
@@ -33,15 +34,18 @@ import { join } from 'path';
       rootPath: join(__dirname, '..', 'uploads'), // Adjust if needed
       serveRoot: '/uploads', // This will expose files under /uploads
     }),
-    AcceptTermConditionModule
+    AcceptTermConditionModule,
+    ConfigModule.forRoot({
+      isGlobal: true, // so you can access it anywhere without re-importing
+    }),
   ],
   controllers: [AppController],
   providers: [
     AppService,
     {
       provide: APP_INTERCEPTOR,
-      useClass: ResponseFormateInterceptor
-    }
+      useClass: ResponseFormateInterceptor,
+    },
   ],
 })
 export class AppModule {}

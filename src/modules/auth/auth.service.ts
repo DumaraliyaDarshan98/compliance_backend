@@ -35,7 +35,7 @@ export class AuthService {
 
   async login(body: { email: string; password: string }): Promise<APIResponseInterface<any>> {
     const employee: any = await this.validateUser(body.email, body.password);
-    
+
     const payload = { email: employee.email, id: employee._id, role: employee.role };
     const { password, $__, $isNew, ...employeeData } = employee.toObject();
     console.log("{ ...employee, access_token: this.jwtService.sign(payload) }", { ...employee, access_token: this.jwtService.sign(payload) })
@@ -198,6 +198,58 @@ export class AuthService {
     } catch (error) {
       console.log("error", error)
       throw new BadRequestException('Invalid token');
+    }
+  }
+
+  async micLogin(req: any, res: any): Promise<void> {
+    try {
+      console.log('Microsoft login request:', req.user);
+      
+      if (!req.user) {
+        throw new UnauthorizedException('No user data received from Microsoft');
+      }
+
+      const { email, firstName, lastName, displayName, microsoftId } = req.user;
+
+      if (!email) {
+        throw new UnauthorizedException('Email is required from Microsoft profile');
+      }
+
+      // Find or create user in your database
+      let employee = await this.employeeModel.findOne({ email });
+
+      if (!employee) {
+        // Create new employee if not exists
+        employee = await this.employeeModel.create({
+          email,
+          firstName: firstName || '',
+          lastName: lastName || '',
+          displayName: displayName || '',
+          microsoftId,
+          isActive: true,
+          role: 'EMPLOYEE', // Set default role,
+          dateOfJoining : new Date()
+        });
+      }
+
+      // Generate JWT token
+      const payload = { 
+        email: employee.email, 
+        id: employee._id, 
+        role: employee.role 
+      };
+      
+      const token = this.jwtService.sign(payload);
+
+      // Redirect to frontend with token
+      res.redirect(`${CONFIG.FRONTEND_URL}callback?token=${token}`);
+    } catch (error) {
+      console.error('Microsoft login error:', error);
+      if (error instanceof UnauthorizedException) {
+        res.redirect(`${CONFIG.FRONTEND_URL}login?error=${encodeURIComponent(error.message)}`);
+      } else {
+        res.redirect(`${CONFIG.FRONTEND_URL}login?error=Authentication failed`);
+      }
     }
   }
 }

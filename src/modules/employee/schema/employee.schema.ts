@@ -19,10 +19,10 @@ export class Employee {
     @Prop({ required: true })
     lastName: string;
 
-    @Prop({ required: true })
+    @Prop({ required: true, default: 'Male' })
     gender: string;
 
-    @Prop({ required: true, type: Date })
+    @Prop({ required: false, type: Date })
     birthDate: Date;
 
     @Prop({ required: true, unique: true })
@@ -31,19 +31,19 @@ export class Employee {
     @Prop({ required: true, type: Date })
     dateOfJoining: Date;
 
-    @Prop({ required: true })
+    @Prop()
     phone: string;
 
     @Prop()
     alternatePhone?: string;
 
-    @Prop({ required: true })
+    @Prop()
     country: string;
 
-    @Prop({ required: true })
+    @Prop()
     state: string;
 
-    @Prop({ required: true })
+    @Prop()
     city: string;
 
     @Prop({ required: true, enum: ROLES })
