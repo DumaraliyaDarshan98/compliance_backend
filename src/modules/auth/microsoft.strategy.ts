@@ -7,6 +7,7 @@ import { ConfigService } from '@nestjs/config';
 @Injectable()
 export class MicrosoftStrategy extends PassportStrategy(Strategy) {
   constructor(private configService: ConfigService) {
+    console.log("this is testing data", configService.get<string>('CLIENT_SECRET'));
     super({
       clientID: CONFIG.CLIENT_ID,
       clientSecret: configService.get<string>('CLIENT_SECRET'),
