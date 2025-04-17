@@ -174,6 +174,37 @@ export class AuthService {
     }
   }
 
+  // Function to be used for the checking register user
+  async checkRegisterUser(email: string) {
+    try {
+      if (!email) {
+        throw new BadRequestException('Please enter email !');
+      }
+
+      const user = await this.employeeModel.findOne({
+        email: email,
+      });
+
+      if (!user) {
+        return {
+          message: "User Not found.",
+          data: {
+            isRegisterUser: false
+          }
+        }
+      }
+      return {
+        message: "User found successfully.",
+        data: {
+          isRegisterUser: true
+        }
+      }
+    } catch (error) {
+      console.log("Facing error while checking register user", error)
+      throw new BadRequestException('Error during checking register user.');
+    }
+  }
+
   async createPassword(token: string, newPassword: string) {
     try {
       if (!token) {
@@ -204,7 +235,7 @@ export class AuthService {
   async micLogin(req: any, res: any): Promise<void> {
     try {
       console.log('Microsoft login request:', req.user);
-      
+
       if (!req.user) {
         throw new UnauthorizedException('No user data received from Microsoft');
       }
@@ -228,17 +259,17 @@ export class AuthService {
           microsoftId,
           isActive: true,
           role: 'EMPLOYEE', // Set default role,
-          dateOfJoining : new Date()
+          dateOfJoining: new Date()
         });
       }
 
       // Generate JWT token
-      const payload = { 
-        email: employee.email, 
-        id: employee._id, 
-        role: employee.role 
+      const payload = {
+        email: employee.email,
+        id: employee._id,
+        role: employee.role
       };
-      
+
       const token = this.jwtService.sign(payload);
 
       // Redirect to frontend with token

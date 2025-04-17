@@ -29,6 +29,14 @@ export class AuthController {
         return await this.authService.resetPassword(token, password);
     }
 
+    // API to be used for the checking register user
+    @Post('check-user')
+    async checkUserRegister(
+        @Body('email') email: string
+    ): Promise<APIResponseInterface<any>> {
+        return await this.authService.checkRegisterUser(email);
+    }
+
     @Patch('create-password')
     async createPassword(
         @Query('token') token: string,
