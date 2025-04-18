@@ -37,6 +37,14 @@ export class AuthController {
         return await this.authService.checkRegisterUser(email);
     }
 
+    // API to be used for the verify OTP
+    @Post('verify-otp')
+    async verifyOTP(
+        @Body() payload: { email: string; otp: string }
+    ): Promise<APIResponseInterface<any>> {
+        return await this.authService.verifyOTP(payload);
+    }
+
     @Patch('create-password')
     async createPassword(
         @Query('token') token: string,

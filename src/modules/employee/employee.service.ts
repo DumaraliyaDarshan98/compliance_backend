@@ -68,78 +68,78 @@ export class EmployeeService {
     try {
       const data = await employee.save();
 
-      const resetUrl = `${CONFIG.frontURL}create-password?token=${employee.email}`;
+      const loginUrl = `${CONFIG.frontURL}login`;
       // const emailContent = `<p>Click <a href="${resetUrl}">here</a> to set your new password.</p>`;
       const emailContent = `<!DOCTYPE html>
-<html>
-<head>
-    <title>Reset Your Password</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            margin: 0;
-            padding: 0;
-        }
-        .container {
-            width: 100%;
-            max-width: 600px;
-            margin: 20px auto;
-            background-color: #ffffff;
-            padding: 20px;
-            border-radius: 5px;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-            /* text-align: center; */
-        }
-        .header-text {
-            font-size: 24px;
-            font-weight: bold;
-            color: #333333;
-            margin-bottom: 20px;
-        }
-        .content {
-            font-size: 16px;
-            color: #333333;
-        }
-        .button {
-            display: inline-block;
-            margin-top: 20px;
-            padding: 12px 24px;
-            background-color: #007BFF;
-            color: black !important;
-            text-decoration: none;
-            font-size: 16px;
-            border-radius: 5px;
-        }
-        .footer {
-            margin-top: 20px;
-            font-size: 12px;
-            color: #777777;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header-text">Set Your Account Password</div>
-        <div class="content">
-            <p>Hello,</p>
-            <p>Welcome to Team! Your account has been successfully created. To access your account, please set up your password using the link below </p>
-            <div style="text-align: center;">
-                <a href="${resetUrl}" class="button">Set New Password</a>
-            </div>
-            <p>
-                Thanks, <br>
-                Compliance Team
-            </p>
-            <p class="footer">
-                This link will expire in 30 minutes. If you need further assistance, please contact our support team.
-            </p>
-        </div>
-    </div>
-</body>
-</html>
-`;
-      await this.mailService.sendResetPasswordEmail(employee.email, emailContent, 'Welcome to Compliance – Set Up Your Password');
+      <html>
+      <head>
+          <title>Account Registration Successful</title>
+          <style>
+              body {
+                  font-family: Arial, sans-serif;
+                  background-color: #f4f4f4;
+                  margin: 0;
+                  padding: 0;
+              }
+              .container {
+                  width: 100%;
+                  max-width: 600px;
+                  margin: 20px auto;
+                  background-color: #ffffff;
+                  padding: 20px;
+                  border-radius: 5px;
+                  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+              }
+              .header-text {
+                  font-size: 24px;
+                  font-weight: bold;
+                  color: #333333;
+                  margin-bottom: 20px;
+                  text-align: left;
+              }
+              .content {
+                  font-size: 16px;
+                  color: #333333;
+                  text-align: left;
+              }
+              .button {
+                  display: inline-block;
+                  margin-top: 20px;
+                  padding: 12px 24px;
+                  background-color: #007BFF;
+                  color: white !important;
+                  text-decoration: none;
+                  font-size: 16px;
+                  border-radius: 5px;
+              }
+              .footer {
+                  margin-top: 20px;
+                  font-size: 12px;
+                  color: #777777;
+                  text-align: left;
+              }
+          </style>
+      </head>
+      <body>
+          <div class="container">
+              <div class="header-text">Registration Successful</div>
+              <div class="content">
+                  <p>Hello,</p>
+                  <p>Congratulations! Your account has been successfully registered on the Compliance Portal.</p>
+                  <p>You can now login and start your test using the button below:</p>
+                  <div>
+                      <a href="${loginUrl}" class="button">Login to Compliance Portal</a>
+                  </div>
+                  <p>Thanks, <br> Compliance Team</p>
+              </div>
+              <p class="footer">
+                  If you have any questions, please contact our support team.
+              </p>
+          </div>
+      </body>
+      </html>
+      `;
+      await this.mailService.sendResetPasswordEmail(employee.email, emailContent, 'Welcome to Compliance Portal – Your Account is Ready!');
 
       return { data };
     } catch (error) {

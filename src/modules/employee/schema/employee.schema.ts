@@ -78,6 +78,12 @@ export class Employee {
 
     @Prop()
     inactiveDate?: Date;
+
+    @Prop()
+    otp?: string;
+
+    @Prop()
+    otpTime?: Date;
 }
 
 export const EmployeeSchema = SchemaFactory.createForClass(Employee);

@@ -8,6 +8,7 @@ import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { MailerService } from "src/utils/mailer/mailer.service";
 import { CONFIG } from "src/utils/keys/keys";
+const crypto = require('crypto');
 
 @Injectable()
 export class AuthService {
@@ -174,6 +175,11 @@ export class AuthService {
     }
   }
 
+  generateOTP(): string {
+    const otp: number = Math.floor(100000 + Math.random() * 900000);
+    return otp.toString();
+  }
+
   // Function to be used for the checking register user
   async checkRegisterUser(email: string) {
     try {
@@ -193,6 +199,89 @@ export class AuthService {
           }
         }
       }
+
+      // Send OTP to email
+      const otp = this.generateOTP();
+
+      // Save otp on table for verification
+      user['otp'] = otp || "";
+      user['otpTime'] = new Date();
+
+      await user.save();
+
+      console.log("this is OTP", otp);
+      const emailContent = `<!DOCTYPE html>
+      <html>
+      <head>
+          <title>Login OTP Verification</title>
+          <style>
+              body {
+                  font-family: Arial, sans-serif;
+                  background-color: #f4f4f4;
+                  margin: 0;
+                  padding: 0;
+              }
+              .container {
+                  width: 100%;
+                  max-width: 600px;
+                  margin: 20px auto;
+                  background-color: #ffffff;
+                  padding: 20px;
+                  border-radius: 5px;
+                  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+              }
+              .header-text {
+                  font-size: 24px;
+                  font-weight: bold;
+                  color: #333333;
+                  margin-bottom: 20px;
+              }
+              .content {
+                  font-size: 16px;
+                  color: #333333;
+              }
+              .otp-box {
+                  display: inline-block;
+                  margin: 20px 0;
+                  padding: 12px 24px;
+                  background-color: #007BFF;
+                  color: white;
+                  font-size: 24px;
+                  letter-spacing: 5px;
+                  border-radius: 5px;
+                  font-weight: bold;
+              }
+              .footer {
+                  margin-top: 20px;
+                  font-size: 12px;
+                  color: #777777;
+              }
+          </style>
+      </head>
+      <body>
+          <div class="container">
+              <div class="header-text">Your Login OTP</div>
+              <div class="content">
+                  <p>Hello,</p>
+                  <p>Use the following One Time Password (OTP) to login to your account. Please enter this OTP on the login page:</p>
+                  <div style="text-align: center;">
+                      <div class="otp-box">${otp}</div>
+                  </div>
+                  <p>
+                      Thanks, <br>
+                      Compliance Team
+                  </p>
+                  <p class="footer">
+                      This OTP is valid for 5 minutes. Please do not share it with anyone.
+                  </p>
+              </div>
+          </div>
+      </body>
+      </html>
+      `;
+
+      await this.mailService.sendResetPasswordEmail(email, emailContent, 'Compliance Login OTP Verification');
+
       return {
         message: "User found successfully.",
         data: {
@@ -202,6 +291,68 @@ export class AuthService {
     } catch (error) {
       console.log("Facing error while checking register user", error)
       throw new BadRequestException('Error during checking register user.');
+    }
+  }
+
+  // Function to be used for the checking register user
+  async verifyOTP(body: { email: string; otp: string }): Promise<APIResponseInterface<any>> {
+    try {
+      if (!body?.email) {
+        throw new BadRequestException('User email address not valid !');
+      }
+
+      if (!body?.otp) {
+        throw new BadRequestException('Please enter otp !');
+      }
+
+      const user = await this.employeeModel.findOne({
+        email: body?.email,
+      });
+
+      if (!user) {
+        return {
+          code: 404,
+          message: "User Not found.",
+          data: null
+        }
+      }
+
+      const otpValidDuration = 10 * 60 * 1000; // 10 minutes in milliseconds
+      const currentTime = new Date().getTime();
+      const otpTime = new Date(user.otpTime).getTime();
+
+      if (user.otp !== String(body?.otp)) {
+        return {
+          code: 400,
+          message: "Invalid OTP.",
+          data: null
+        }
+      }
+
+      if (currentTime - otpTime > otpValidDuration) {
+        return {
+          code: 400,
+          message: "OTP expired.",
+          data: null
+        }
+      }
+
+      // Save otp on table for verification
+      user['otp'] = null;
+      user['otpTime'] = null;
+
+      const employee: any = await user.save();
+
+      const payload = { email: employee.email, id: employee._id, role: employee.role };
+      const { password, $__, $isNew, ...employeeData } = employee.toObject();
+
+      return {
+        message: "OTP verified successfully.",
+        data: { ...employeeData, access_token: this.jwtService.sign(payload) },
+      };
+    } catch (error) {
+      console.log("Facing error verify otp", error)
+      throw new BadRequestException('Facing error verify otp');
     }
   }
 
