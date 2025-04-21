@@ -83,6 +83,9 @@ export class Employee {
     otp?: string;
 
     @Prop()
+    jobType?: string;
+
+    @Prop()
     otpTime?: Date;
 }
 
