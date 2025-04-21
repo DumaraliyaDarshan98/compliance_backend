@@ -7,6 +7,11 @@ import { ResultModule } from 'src/modules/result/result.module'; // Import the R
 import { QuestionModule } from 'src/modules/question/question.module'; // Import the QuestionModule
 import { SubPolicyModule } from 'src/modules/sub-policy/sub-policy.module'; // Import the SubPolicyModule
 import { OptionModule } from 'src/modules/option/option.module';
+import { SubPolicyService } from '../sub-policy/sub-policy.service';
+import { PolicySettingModule } from '../policy-setting/policy-setting.module';
+import { MailerService } from 'src/utils/mailer/mailer.service';
+import { EmployeeModule } from '../employee/employee.module';
+import { EmployeeService } from '../employee/employee.service';
 
 @Module({
     imports: [
@@ -14,9 +19,11 @@ import { OptionModule } from 'src/modules/option/option.module';
         ResultModule,
         QuestionModule,
         SubPolicyModule,
-        OptionModule
+        PolicySettingModule,
+        OptionModule,
+        EmployeeModule
     ],
-    providers: [AnswerService],
+    providers: [AnswerService, SubPolicyService, MailerService, EmployeeService],
     controllers: [AnswerController],
     exports: [AnswerService, MongooseModule]
 })
