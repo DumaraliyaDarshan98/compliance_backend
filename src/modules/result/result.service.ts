@@ -65,23 +65,12 @@ export class ResultService {
 
             const pipeline: PipelineStage[] = [
                 {
-                    $match: matchQuery,
-                },
-                {
                     $project: {
                         _id: 1,
                         policyId: 1,
                         name: 1,
                         version: 1,
                         description: 1,
-                    },
-                },
-                {
-                    $lookup: {
-                        from: "policy_settings",
-                        localField: "_id",
-                        foreignField: "subPolicyId",
-                        as: "policySettingDetails",
                     },
                 },
                 {
@@ -93,11 +82,30 @@ export class ResultService {
                     },
                 },
                 {
+                    $match: {
+                        $or: [
+                            { version: { $regex: payload.searchText?.trim() || "", $options: "i" } },
+                            { "policyDetail.name": { $regex: payload.searchText?.trim() || "", $options: "i" } },
+                        ],
+                    },
+                },
+                // {
+                //     $match: matchQuery,
+                // },
+                {
+                    $lookup: {
+                        from: "policy_settings",
+                        localField: "_id",
+                        foreignField: "subPolicyId",
+                        as: "policySettingDetails",
+                    },
+                },
+                {
                     $lookup: {
                         from: 'accepted_terms_conditions',
                         localField: '_id',
                         foreignField: 'subPolicyId',
-                        pipeline :[
+                        pipeline: [
                             {
                                 $match: {
                                     'employeeId': new mongoose.Types.ObjectId(payload.employeeId)
@@ -118,7 +126,7 @@ export class ResultService {
                         from: "results",
                         localField: "_id",
                         foreignField: "subPolicyId",
-                        pipeline :[
+                        pipeline: [
                             {
                                 $match: {
                                     'employeeId': new mongoose.Types.ObjectId(payload.employeeId)
@@ -527,7 +535,7 @@ export class ResultService {
                         from: "results",
                         localField: "_id",
                         foreignField: "employeeId",
-                        pipeline :[
+                        pipeline: [
                             {
                                 $match: {
                                     "subPolicyId": new mongoose.Types.ObjectId(payload.subPolicyId),
@@ -628,8 +636,8 @@ export class ResultService {
                         version: 1,
                         description: 1,
                         createdAt: 1,
-                        userGroup:1,
-                        policyType:1
+                        userGroup: 1,
+                        policyType: 1
                     },
                 },
                 {
@@ -641,147 +649,147 @@ export class ResultService {
                         localField: "_id",
                         foreignField: "policyId",
                         pipeline: [
-                                    {
-                                        $lookup: {
-                                            from: "policy_settings",
-                                            localField: "_id",
-                                            foreignField: "subPolicyId",
-                                            as: "policySettingDetail",
-                                        },
-                                    },
-                                    {
-                                        $unwind: {
-                                            path: '$policySettingDetail',
-                                            preserveNullAndEmptyArrays: false,
-                                        },
-                                    },
-                                    {
-                                        $match: {
-                                            'policySettingDetail.publishDate': {
-                                                $lt: new Date()
-                                            },
-                                            /*'policySettingDetail.examTimeLimit': {
-                                                $gte: new Date()
-                                            },*/
-                                        },
-                                    },
-                                    {
-                                        $lookup: {
-                                            from: 'accepted_terms_conditions',
-                                            localField: '_id',
-                                            foreignField: 'subPolicyId',
-                                            pipeline :[
-                                                {
-                                                    $match: {
-                                                        $or: [
-                                                            { 'employeeId': new mongoose.Types.ObjectId(payload.employeeId) }
-                                                        ]
-                                                    }
-                                                }
-                                            ],
-                                            as: 'conditionDetail',
-                                        },
-                                    },
-                                    {
-                                        $lookup: {
-                                            from: "policy_due_dates",
-                                            localField: "_id",
-                                            foreignField: "subPolicyId",
-                                            pipeline :[
-                                                {
-                                                    $match: {
-                                                        'employeeId': new mongoose.Types.ObjectId(payload.employeeId)
-                                                    }
-                                                },
-                                            ],
-                                            as: "policyDueDate",
-                                        },
-                                    },
-                                    {
-                                    $lookup: {
-                                        from: "results",
-                                        localField: "_id",
-                                        foreignField: "subPolicyId",
-                                        pipeline: [
-                                                {
-                                                    $match: {
-                                                        $or: [
-                                                            { 'employeeId': new mongoose.Types.ObjectId(payload.employeeId) }
-                                                        ]
-                                                    }
-                                                },
-                                                {
-                                                    $sort: { 'createdAt': -1 }, // Sort by createdAt descending (latest result first)
-                                                },
-                                                {
-                                                    $limit: 1 // Get the latest result
-                                                },
-                                                {
-                                                    $project: {
-                                                        _id: 1,
-                                                        subPolicyId:1,
-                                                        employeeId:1,
-                                                        score:1,
-                                                        submitDate:1,
-                                                        resultStatus:1,
-                                                        duration:1,
-                                                        status: 1,
-                                                        createdAt: 1, // Ensure we have status and createdAt to check for latest
-                                                    }
-                                                }
-                                            ],
-                                        as: "resultDetails",
-                                    },
+                            {
+                                $lookup: {
+                                    from: "policy_settings",
+                                    localField: "_id",
+                                    foreignField: "subPolicyId",
+                                    as: "policySettingDetail",
                                 },
-                                {
-                                    $match: {
-                                        $or: [
-                                            { "resultDetails": { $eq: null } },
-                                            { "resultDetails": { $size: 0 } }, 
-                                            { "resultDetails": { $elemMatch: { "resultStatus": "2" } } }, // Matches if any element has resultStatus: "2"
-                                        ],
-                                    },
+                            },
+                            {
+                                $unwind: {
+                                    path: '$policySettingDetail',
+                                    preserveNullAndEmptyArrays: false,
                                 },
-                                {
-                                    $lookup: {
-                                        from: "questions",
-                                        localField: "_id",
-                                        foreignField: "subPolicyId",
-                                        pipeline :[
-                                            {
-                                                $match: {
-                                                    $or: [
-                                                        { 'userGroup': payload.userGroup }
-                                                    ]
-                                                }
+                            },
+                            {
+                                $match: {
+                                    'policySettingDetail.publishDate': {
+                                        $lt: new Date()
+                                    },
+                                    /*'policySettingDetail.examTimeLimit': {
+                                        $gte: new Date()
+                                    },*/
+                                },
+                            },
+                            {
+                                $lookup: {
+                                    from: 'accepted_terms_conditions',
+                                    localField: '_id',
+                                    foreignField: 'subPolicyId',
+                                    pipeline: [
+                                        {
+                                            $match: {
+                                                $or: [
+                                                    { 'employeeId': new mongoose.Types.ObjectId(payload.employeeId) }
+                                                ]
                                             }
-                                        ],
-                                        as: "questions",
-                                    },
+                                        }
+                                    ],
+                                    as: 'conditionDetail',
                                 },
-                                {
-                                    $unwind: {
-                                        path: '$questions',
-                                        preserveNullAndEmptyArrays: true,
-                                    },
-                                }, 
-                                {
-                                    $group: {
-                                        _id: "$_id",
-                                        name: { $first: "$name" },
-                                        version: { $first: "$version" },
-                                        description: { $first: "$description" },
-                                        createdAt: { $first: "$createdAt" },
-                                        policySettingDetail: { $first: "$policySettingDetail" },
-                                        conditionDetail: { $first: "$conditionDetail" },
-                                        policyDueDate: { $first: "$policyDueDate" },
-                                        resultDetails: { $first: "$resultDetails" },
-                                        questions: { $push: "$questions" }
-                                    },
+                            },
+                            {
+                                $lookup: {
+                                    from: "policy_due_dates",
+                                    localField: "_id",
+                                    foreignField: "subPolicyId",
+                                    pipeline: [
+                                        {
+                                            $match: {
+                                                'employeeId': new mongoose.Types.ObjectId(payload.employeeId)
+                                            }
+                                        },
+                                    ],
+                                    as: "policyDueDate",
                                 },
-                                {
-                                    $sort: { 'createdAt': -1 }, // Sort by createdAt descending (latest result first)
-                                }
+                            },
+                            {
+                                $lookup: {
+                                    from: "results",
+                                    localField: "_id",
+                                    foreignField: "subPolicyId",
+                                    pipeline: [
+                                        {
+                                            $match: {
+                                                $or: [
+                                                    { 'employeeId': new mongoose.Types.ObjectId(payload.employeeId) }
+                                                ]
+                                            }
+                                        },
+                                        {
+                                            $sort: { 'createdAt': -1 }, // Sort by createdAt descending (latest result first)
+                                        },
+                                        {
+                                            $limit: 1 // Get the latest result
+                                        },
+                                        {
+                                            $project: {
+                                                _id: 1,
+                                                subPolicyId: 1,
+                                                employeeId: 1,
+                                                score: 1,
+                                                submitDate: 1,
+                                                resultStatus: 1,
+                                                duration: 1,
+                                                status: 1,
+                                                createdAt: 1, // Ensure we have status and createdAt to check for latest
+                                            }
+                                        }
+                                    ],
+                                    as: "resultDetails",
+                                },
+                            },
+                            {
+                                $match: {
+                                    $or: [
+                                        { "resultDetails": { $eq: null } },
+                                        { "resultDetails": { $size: 0 } },
+                                        { "resultDetails": { $elemMatch: { "resultStatus": "2" } } }, // Matches if any element has resultStatus: "2"
+                                    ],
+                                },
+                            },
+                            {
+                                $lookup: {
+                                    from: "questions",
+                                    localField: "_id",
+                                    foreignField: "subPolicyId",
+                                    pipeline: [
+                                        {
+                                            $match: {
+                                                $or: [
+                                                    { 'userGroup': payload.userGroup }
+                                                ]
+                                            }
+                                        }
+                                    ],
+                                    as: "questions",
+                                },
+                            },
+                            {
+                                $unwind: {
+                                    path: '$questions',
+                                    preserveNullAndEmptyArrays: true,
+                                },
+                            },
+                            {
+                                $group: {
+                                    _id: "$_id",
+                                    name: { $first: "$name" },
+                                    version: { $first: "$version" },
+                                    description: { $first: "$description" },
+                                    createdAt: { $first: "$createdAt" },
+                                    policySettingDetail: { $first: "$policySettingDetail" },
+                                    conditionDetail: { $first: "$conditionDetail" },
+                                    policyDueDate: { $first: "$policyDueDate" },
+                                    resultDetails: { $first: "$resultDetails" },
+                                    questions: { $push: "$questions" }
+                                },
+                            },
+                            {
+                                $sort: { 'createdAt': -1 }, // Sort by createdAt descending (latest result first)
+                            }
                         ],
                         as: "subPoliciyDetail",
                     },
@@ -798,65 +806,65 @@ export class ResultService {
                         localField: "_id",
                         foreignField: "policyId",
                         pipeline: [
-                                    {
-                                        $lookup: {
-                                            from: "policy_settings",
-                                            localField: "_id",
-                                            foreignField: "subPolicyId",
-                                            as: "policySettingDetail",
-                                        },
+                            {
+                                $lookup: {
+                                    from: "policy_settings",
+                                    localField: "_id",
+                                    foreignField: "subPolicyId",
+                                    as: "policySettingDetail",
+                                },
+                            },
+                            {
+                                $unwind: {
+                                    path: '$policySettingDetail',
+                                    preserveNullAndEmptyArrays: false,
+                                },
+                            },
+                            {
+                                $match: {
+                                    'policySettingDetail.publishDate': {
+                                        $lt: new Date()
                                     },
-                                    {
-                                        $unwind: {
-                                            path: '$policySettingDetail',
-                                            preserveNullAndEmptyArrays: false,
-                                        },
-                                    },
-                                    {
-                                        $match: {
-                                            'policySettingDetail.publishDate': {
-                                                $lt: new Date()
-                                            },
-                                            /*'policySettingDetail.examTimeLimit': {
-                                                $gte: new Date()
-                                            },*/
-                                        },
-                                    },
-                                    {
-                                        $lookup: {
-                                            from: "questions",
-                                            localField: "_id",
-                                            foreignField: "subPolicyId",
-                                            pipeline :[
-                                                {
-                                                    $match: {
-                                                        $or: [
-                                                            { 'userGroup': payload.userGroup }
-                                                        ]
-                                                    }
-                                                }
-                                            ],
-                                            as: "questions",
-                                        },
-                                    },
-                                    {
-                                        $unwind: {
-                                            path: '$questions',
-                                            preserveNullAndEmptyArrays: true,
-                                        },
-                                    }, 
-                                    {
-                                        $group: {
-                                            _id: "$_id",
-                                            name: { $first: "$name" },
-                                            version: { $first: "$version" },
-                                            description: { $first: "$description" },
-                                            createdAt: { $first: "$createdAt" },
-                                        },
-                                    },
-                                {
-                                    $sort: { 'createdAt': -1 }, // Sort by createdAt descending (latest result first)
-                                }
+                                    /*'policySettingDetail.examTimeLimit': {
+                                        $gte: new Date()
+                                    },*/
+                                },
+                            },
+                            {
+                                $lookup: {
+                                    from: "questions",
+                                    localField: "_id",
+                                    foreignField: "subPolicyId",
+                                    pipeline: [
+                                        {
+                                            $match: {
+                                                $or: [
+                                                    { 'userGroup': payload.userGroup }
+                                                ]
+                                            }
+                                        }
+                                    ],
+                                    as: "questions",
+                                },
+                            },
+                            {
+                                $unwind: {
+                                    path: '$questions',
+                                    preserveNullAndEmptyArrays: true,
+                                },
+                            },
+                            {
+                                $group: {
+                                    _id: "$_id",
+                                    name: { $first: "$name" },
+                                    version: { $first: "$version" },
+                                    description: { $first: "$description" },
+                                    createdAt: { $first: "$createdAt" },
+                                },
+                            },
+                            {
+                                $sort: { 'createdAt': -1 }, // Sort by createdAt descending (latest result first)
+                            }
                         ],
                         as: "subPoliciyList",
                     },
@@ -874,10 +882,10 @@ export class ResultService {
                         version: { $first: "$version" },
                         description: { $first: "$description" },
                         createdAt: { $first: "$createdAt" },
-                        userGroup : { $first : "$userGroup"},
+                        userGroup: { $first: "$userGroup" },
                         policyType: { $first: "$policyType" },
                         subPoliciyDetail: { $push: "$subPoliciyDetail" },
-                        subPoliciyList: { $first : "$subPoliciyList"}
+                        subPoliciyList: { $first: "$subPoliciyList" }
                     },
                 },
                 {
