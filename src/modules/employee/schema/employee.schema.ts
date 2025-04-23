@@ -25,8 +25,11 @@ export class Employee {
     @Prop({ required: true, type: Date })
     birthDate: Date;
 
-    @Prop({ required: true, unique: true })
+    @Prop({ required: true })
     email: string;
+
+    @Prop()
+    personalEmail: string;
 
     @Prop({ required: true, type: Date })
     dateOfJoining: Date;

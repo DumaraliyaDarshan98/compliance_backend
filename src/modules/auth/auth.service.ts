@@ -200,6 +200,15 @@ export class AuthService {
         }
       }
 
+      if (user?.isActive == 0) {
+        return {
+          message: "Your account is in-active",
+          data: {
+            isRegisterUser: false
+          }
+        }
+      }
+
       // Send OTP to email
       const otp = this.generateOTP();
 
@@ -306,7 +315,7 @@ export class AuthService {
       }
 
       const user = await this.employeeModel.findOne({
-        email: body?.email,
+        email: body?.email, isActive: 1
       });
 
       if (!user) {

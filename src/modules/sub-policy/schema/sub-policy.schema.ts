@@ -14,7 +14,7 @@ export class SubPolicy {
     @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Policy', required: true })
     policyId: mongoose.Schema.Types.ObjectId; 
 
-    @Prop({ required: true })
+    @Prop({ required: false, defualt : null })
     name: string;
 
     @Prop({ required: true })

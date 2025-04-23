@@ -30,34 +30,34 @@ export class EmployeeService {
       throw new BadRequestException(`Employee Id Already Exists`);
     }
 
-    const existingDetails = await this.employeeModel.findOne({ email: employeeDto?.email }).exec();
+    const existingDetails = await this.employeeModel.findOne({ email: employeeDto?.email, isActive: 1 }).exec();
     if (existingDetails) {
       throw new BadRequestException(`Email Already Exists`);
     }
 
-    const existingPhoneDetails = await this.employeeModel.findOne({ phone: employeeDto?.phone }).exec();
-    if (existingPhoneDetails) {
-      throw new BadRequestException(`Phone number Already Exists`);
-    }
+    // const existingPhoneDetails = await this.employeeModel.findOne({ phone: employeeDto?.phone }).exec();
+    // if (existingPhoneDetails) {
+    //   throw new BadRequestException(`Phone number Already Exists`);
+    // }
 
-    const existingPhoneAltDetails = await this.employeeModel.findOne({ alternatePhone: employeeDto?.phone }).exec();
-    if (existingPhoneAltDetails) {
-      throw new BadRequestException(`Phone number Already Exists`);
-    }
+    // const existingPhoneAltDetails = await this.employeeModel.findOne({ alternatePhone: employeeDto?.phone }).exec();
+    // if (existingPhoneAltDetails) {
+    //   throw new BadRequestException(`Phone number Already Exists`);
+    // }
 
-    if (employeeDto?.alternatePhone) {
-      const existingAlPhoneDetails = await this.employeeModel.findOne({ alternatePhone: employeeDto?.alternatePhone }).exec();
-      if (existingAlPhoneDetails) {
-        throw new BadRequestException(`Alternate Phone number Already Exists`);
-      }
-    }
+    // if (employeeDto?.alternatePhone) {
+    //   const existingAlPhoneDetails = await this.employeeModel.findOne({ alternatePhone: employeeDto?.alternatePhone }).exec();
+    //   if (existingAlPhoneDetails) {
+    //     throw new BadRequestException(`Alternate Phone number Already Exists`);
+    //   }
+    // }
 
-    if (employeeDto?.alternatePhone) {
-      const existingAlPhoneNumberDetails = await this.employeeModel.findOne({ phone: employeeDto?.alternatePhone }).exec();
-      if (existingAlPhoneNumberDetails) {
-        throw new BadRequestException(`Alternate Phone number Already Exists`);
-      }
-    }
+    // if (employeeDto?.alternatePhone) {
+    //   const existingAlPhoneNumberDetails = await this.employeeModel.findOne({ phone: employeeDto?.alternatePhone }).exec();
+    //   if (existingAlPhoneNumberDetails) {
+    //     throw new BadRequestException(`Alternate Phone number Already Exists`);
+    //   }
+    // }
 
     const payload = { ...rest }
     if (img) {
@@ -324,6 +324,7 @@ export class EmployeeService {
 
     const emailExists = await this.employeeModel.findOne({
       email: employeeDto.email,
+      isActive: 1,
       _id: { $ne: employeeDto.id },
     });
 
