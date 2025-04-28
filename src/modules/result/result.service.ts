@@ -49,7 +49,10 @@ export class ResultService {
             let matchQuery: any = { isActive: 1 };
 
             if (payload?.searchText && payload.searchText.trim() !== "") {
-                matchQuery.version = { $regex: payload.searchText, $options: 'i' };
+                matchQuery.$or = [
+                    { name: { $regex: payload.searchText, $options: 'i' } },
+                    { version: { $regex: payload.searchText, $options: 'i' } }
+                ];
             }
 
             let sortOptions = {};
@@ -610,7 +613,10 @@ export class ResultService {
             let matchQuery: any = { isActive: 1 };
 
             if (payload?.searchText && payload.searchText.trim() !== "") {
-                matchQuery.name = { $regex: payload.searchText, $options: 'i' };
+                matchQuery.$or = [
+                    { name: { $regex: payload.searchText, $options: 'i' } },
+                    { version: { $regex: payload.searchText, $options: 'i' } }
+                ];
             }
 
             let sortOptions = {};
@@ -625,9 +631,9 @@ export class ResultService {
             const pageOffset = (pageNumber - 1) * pageLimit;
 
             const pipeline: PipelineStage[] = [
-                {
-                    $match: matchQuery,
-                },
+                // {
+                //     $match: matchQuery,
+                // },
                 {
                     $project: {
                         _id: 1,
@@ -668,9 +674,6 @@ export class ResultService {
                                     'policySettingDetail.publishDate': {
                                         $lt: new Date()
                                     },
-                                    /*'policySettingDetail.examTimeLimit': {
-                                        $gte: new Date()
-                                    },*/
                                 },
                             },
                             {
@@ -719,10 +722,10 @@ export class ResultService {
                                             }
                                         },
                                         {
-                                            $sort: { 'createdAt': -1 }, // Sort by createdAt descending (latest result first)
+                                            $sort: { 'createdAt': -1 },
                                         },
                                         {
-                                            $limit: 1 // Get the latest result
+                                            $limit: 1
                                         },
                                         {
                                             $project: {
@@ -734,7 +737,7 @@ export class ResultService {
                                                 resultStatus: 1,
                                                 duration: 1,
                                                 status: 1,
-                                                createdAt: 1, // Ensure we have status and createdAt to check for latest
+                                                createdAt: 1,
                                             }
                                         }
                                     ],
@@ -746,7 +749,7 @@ export class ResultService {
                                     $or: [
                                         { "resultDetails": { $eq: null } },
                                         { "resultDetails": { $size: 0 } },
-                                        { "resultDetails": { $elemMatch: { "resultStatus": "2" } } }, // Matches if any element has resultStatus: "2"
+                                        { "resultDetails": { $elemMatch: { "resultStatus": "2" } } },
                                     ],
                                 },
                             },
@@ -788,7 +791,7 @@ export class ResultService {
                                 },
                             },
                             {
-                                $sort: { 'createdAt': -1 }, // Sort by createdAt descending (latest result first)
+                                $sort: { 'createdAt': -1 },
                             }
                         ],
                         as: "subPoliciyDetail",
@@ -825,9 +828,6 @@ export class ResultService {
                                     'policySettingDetail.publishDate': {
                                         $lt: new Date()
                                     },
-                                    /*'policySettingDetail.examTimeLimit': {
-                                        $gte: new Date()
-                                    },*/
                                 },
                             },
                             {
@@ -863,7 +863,7 @@ export class ResultService {
                                 },
                             },
                             {
-                                $sort: { 'createdAt': -1 }, // Sort by createdAt descending (latest result first)
+                                $sort: { 'createdAt': -1 },
                             }
                         ],
                         as: "subPoliciyList",
@@ -892,6 +892,20 @@ export class ResultService {
                     $sort: sortOptions,
                 },
             ];
+
+            // If search text exists, add a match stage to filter results
+            if (payload?.searchText && payload.searchText.trim() !== "") {
+                pipeline.push({
+                    $match: {
+                        $or: [
+                            { name: { $regex: payload.searchText, $options: 'i' } },
+                            { version: { $regex: payload.searchText, $options: 'i' } },
+                            { "subPoliciyDetail.name": { $regex: payload.searchText, $options: 'i' } },
+                            { "subPoliciyDetail.version": { $regex: payload.searchText, $options: 'i' } }
+                        ]
+                    }
+                });
+            }
 
             const countResult = await this.policyModel.aggregate(pipeline);
             pipeline.push({

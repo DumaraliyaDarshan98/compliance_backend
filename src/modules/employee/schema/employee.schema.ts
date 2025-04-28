@@ -90,6 +90,18 @@ export class Employee {
 
     @Prop()
     otpTime?: Date;
+
+    @Prop()
+    postCode?: string;
+
+    @Prop()
+    addressLine1?: string;
+
+    @Prop()
+    addressLine2?: string;
+
+    @Prop()
+    addressLine3?: string;
 }
 
 export const EmployeeSchema = SchemaFactory.createForClass(Employee);

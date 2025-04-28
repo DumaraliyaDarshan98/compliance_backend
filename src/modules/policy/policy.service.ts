@@ -1,3 +1,4 @@
+import { SubPolicy } from './../sub-policy/schema/sub-policy.schema';
 import {
     BadRequestException,
     HttpStatus,
@@ -95,14 +96,14 @@ export class PolicyService {
                         pipeline: [
                             {
                                 $match: {
-                                    $expr: { $and: [ { $eq: [ "$isActive", 1 ] } ] }
+                                    $expr: { $and: [{ $eq: ["$isActive", 1] }] }
                                 }
                             },
                             {
                                 $lookup: {
-                                    from: 'accepted_terms_conditions', 
-                                    localField: '_id', 
-                                    foreignField: 'subPolicyId', 
+                                    from: 'accepted_terms_conditions',
+                                    localField: '_id',
+                                    foreignField: 'subPolicyId',
                                     pipeline: [
                                         {
                                             $match: {
@@ -113,7 +114,7 @@ export class PolicyService {
                                 },
                             },
                             {
-                                $sort: { 'createdAt' : 1},
+                                $sort: { 'createdAt': 1 },
                             }
                         ],
                         as: 'subPolicyDetail',
@@ -141,7 +142,7 @@ export class PolicyService {
                     $limit: pageLimit,
                 }
             ];
-             
+
             const policyList = await this.policyModel.aggregate(pipeline);
 
             if (policyList.length <= 0) {
@@ -316,12 +317,120 @@ export class PolicyService {
 
     async findById(id: string): Promise<APIResponseInterface<Policy>> {
         try {
-            const policyDetails = await this.policyModel.findById(id).exec();
-            if (!policyDetails) {
+            const pipeline: PipelineStage[] = [
+                {
+                    $match: {
+                        _id: new mongoose.Types.ObjectId(id)
+                    }
+                },
+                {
+                    $lookup: {
+                        from: 'sub_policies',
+                        localField: '_id',
+                        foreignField: 'policyId',
+                        pipeline: [
+                            {
+                                $match: {
+                                    $expr: { $and: [{ $eq: ["$isActive", 1] }] }
+                                }
+                            },
+                            {
+                                $sort: { createdAt: -1 }
+                            },
+                            {
+                                $limit: 1
+                            }
+                        ],
+                        as: 'subPolicyDetail'
+                    }
+                },
+                {
+                    $lookup: {
+                        from: "employees",
+                        pipeline: [
+                            {
+                                $match: {
+                                    $and: [
+                                        { isActive: 1 },
+                                        { role: { $ne: "ADMIN" } }
+                                    ]
+                                }
+                            }
+                        ],
+                        as: "activeUsers"
+                    }
+                },
+                {
+                    $lookup: {
+                        from: "results",
+                        let: {
+                            subPolicyIds: "$subPolicyDetail._id",
+                            activeUserIds: "$activeUsers._id"
+                        },
+                        pipeline: [
+                            {
+                                $match: {
+                                    $expr: {
+                                        $and: [
+                                            { $in: ["$subPolicyId", "$$subPolicyIds"] },
+                                            { $in: ["$employeeId", "$$activeUserIds"] }
+                                        ]
+                                    }
+                                }
+                            },
+                            {
+                                $sort: { createdAt: -1 }
+                            },
+                            {
+                                $group: {
+                                    _id: {
+                                        employeeId: "$employeeId",
+                                        subPolicyId: "$subPolicyId"
+                                    },
+                                    latestResult: { $first: "$$ROOT" }
+                                }
+                            },
+                            {
+                                $replaceRoot: { newRoot: "$latestResult" }
+                            }
+                        ],
+                        as: "allResults"
+                    }
+                },
+                {
+                    $addFields: {
+                        allUserGiveExam: {
+                            $cond: {
+                                if: {
+                                    $and: [
+                                        { $gt: [{ $size: "$activeUsers" }, 0] },
+                                        { $gt: [{ $size: "$subPolicyDetail" }, 0] },
+                                        {
+                                            $eq: [
+                                                { $size: "$allResults" },
+                                                { $multiply: [{ $size: "$activeUsers" }, { $size: "$subPolicyDetail" }] }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                then: true,
+                                else: false
+                            }
+                        }
+                    }
+                }
+            ];
+
+            const policyDetails = await this.policyModel.aggregate(pipeline);
+
+            if (!policyDetails || policyDetails.length === 0) {
                 throw new NotFoundException(`Policy with ID ${id} not found`);
             }
+
+
             return {
-                data: policyDetails
+                data: { ...policyDetails[0], allUserGiveExam: policyDetails[0].allUserGiveExam },
+
             };
         } catch (error) {
             console.error("Error findById:", error);
