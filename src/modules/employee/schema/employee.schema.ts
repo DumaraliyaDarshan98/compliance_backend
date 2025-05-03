@@ -46,8 +46,8 @@ export class Employee {
     @Prop({ required: true })
     state: string;
 
-    @Prop({ required: true })
-    city: string;
+    @Prop()
+    city?: string;
 
     @Prop({ required: true, enum: ROLES })
     role: ROLES;
@@ -102,6 +102,9 @@ export class Employee {
 
     @Prop()
     addressLine3?: string;
+
+    @Prop()
+    countryCode?: string;
 }
 
 export const EmployeeSchema = SchemaFactory.createForClass(Employee);
