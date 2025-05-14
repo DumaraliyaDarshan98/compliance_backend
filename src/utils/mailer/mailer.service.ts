@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import * as nodemailer from 'nodemailer';
+// import * as nodemailer from 'nodemailer';
 import { CONFIG } from '../keys/keys';
 
 @Injectable()
@@ -7,12 +7,26 @@ export class MailerService {
     private transporter: any;
 
     constructor() {
+        // this.transporter = nodemailer.createTransport({
+        //     service: 'gmail', // or use 'smtp' configuration
+        //     auth: {
+        //         user: CONFIG.email, // Your email
+        //         pass: CONFIG.password, // App password or actual password
+        //     },
+        // });
+        const nodemailer = require('nodemailer');
+
         this.transporter = nodemailer.createTransport({
-            service: 'gmail', // or use 'smtp' configuration
+            host: "smtp.office365.com",
+            port: 587,
+            secure: false, // use START TLS
             auth: {
                 user: CONFIG.email, // Your email
                 pass: CONFIG.password, // App password or actual password
             },
+            tls: {
+                rejectUnauthorized: false
+            }
         });
     }
 
@@ -27,9 +41,9 @@ export class MailerService {
 
         try {
             await this.transporter.sendMail(mailOptions);
-            console.log('Email sent successfully');
+            console.log('Email sent successfully : ', to);
         } catch (error) {
-            console.error('Error sending email:', error);
+            console.error('Error sending email:', to + ' : ' + error);
             throw new Error('Failed to send reset password email');
         }
     }

@@ -1,8 +1,11 @@
 // Development Keys
 export const CONFIG = {
     databaseUrl: "mongodb+srv://compliance:CMaZlFCkGpfP0dqx@cluster0.sfxqo.mongodb.net",
-    email: "darshandumaraliya@gmail.com",
-    password: "scax jznf deob atoh",
+    // email: "darshandumaraliya@gmail.com",
+    // password: "scax jznf deob atoh",
+    email: "compliance@spectrumithub.com",
+    // password: "T#341227474735un",
+    password: "wnqttwjryjlzhcbf",
     // frontURL: "https://compliance.delphiservices.co.uk/#/",
     frontURL: "https://compliance.delphiservices.co.uk/#/",
 
