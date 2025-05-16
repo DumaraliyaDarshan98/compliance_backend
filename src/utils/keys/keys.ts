@@ -5,7 +5,7 @@ export const CONFIG = {
     // password: "scax jznf deob atoh",
     email: "compliance@spectrumithub.com",
     // password: "T#341227474735un",
-    password: "wnqttwjryjlzhcbf",
+    password: "lpkzkpwfkkqtqlly",
     // frontURL: "https://compliance.delphiservices.co.uk/#/",
     frontURL: "https://compliance.delphiservices.co.uk/#/",
 
